@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PassageEditor from "./components/PassageEditor";
 import QuestionDisplay from "./components/QuestionDisplay";
+import QuestionEditor from "./components/QuestionEditor";
 import SessionControls from "./components/SessionControls";
 import "./App.css";
 
@@ -15,12 +16,22 @@ type Session = {
   questions: Question[];
 };
 
+const addNewQuestion = () => {
+  const newQuestion = {
+    stem: "",
+    choices: ["", "", "", "", ""],
+  };
+  setSession((prev) => ({
+    ...prev,
+    questions: [...prev.questions, newQuestion],
+  }));
+  setCurrentQuestionIndex(session.questions.length); // jump to new question
+};
+
+
 export default function App() {
   const [session, setSession] = useState<Session>({
-    passage: `The rise of remote work has significantly altered the landscape of urban economies. 
-Many companies now offer flexible schedules or fully remote positions, leading to decreased demand 
-for commercial office space. This shift has also impacted public transit systems, downtown retail, 
-and residential patterns.`,
+    passage: `The rise of remote work has significantly altered the landscape of urban economies...`,
     questions: [
       {
         stem: "Which of the following most accurately expresses the main point of the passage?",
@@ -37,7 +48,7 @@ and residential patterns.`,
         choices: [
           "A survey found that over 60% of workers prefer to work remotely at least three days a week.",
           "Some cities have seen a small rebound in office leasing during the past six months.",
-          "Remote work has existed in various forms since the early 2000s.",
+          "Remote work has existed in various forms since the early 2000s.\n\n\n",
           "Many remote workers report lower levels of work-life balance.",
           "Office occupancy rates remain unchanged in suburban business parks.",
         ],
@@ -46,16 +57,13 @@ and residential patterns.`,
   });
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [mode, setMode] = useState<"display" | "edit">("display");
 
-  // Load from localStorage if available
   useEffect(() => {
     const saved = localStorage.getItem("lsat-session");
-    if (saved) {
-      setSession(JSON.parse(saved));
-    }
+    if (saved) setSession(JSON.parse(saved));
   }, []);
 
-  // Autosave to localStorage
   useEffect(() => {
     localStorage.setItem("lsat-session", JSON.stringify(session));
   }, [session]);
@@ -75,6 +83,12 @@ and residential patterns.`,
     setSession((prev) => ({ ...prev, passage: text }));
   };
 
+  const updateQuestion = (index: number, updated: Question) => {
+    const newQuestions = [...session.questions];
+    newQuestions[index] = updated;
+    setSession((prev) => ({ ...prev, questions: newQuestions }));
+  };
+
   const importSession = (data: Session) => {
     setSession(data);
     setCurrentQuestionIndex(0);
@@ -92,31 +106,89 @@ and residential patterns.`,
 
   return (
     <div className="app-container">
-      <h1>PrepTogether</h1>
-
-      <h2>Passage</h2>
-      <PassageEditor value={session.passage} onChange={updatePassage} />
-
-      <h2>Question {currentQuestionIndex + 1}</h2>
-      <QuestionDisplay
-        question={currentQuestion}
-        qIndex={currentQuestionIndex}
-        onSelectChoice={(choiceIndex) =>
-          updateChoice(currentQuestionIndex, choiceIndex)
-        }
-      />
-
-      <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-        <button onClick={goToPrev} disabled={currentQuestionIndex === 0}>
-          Previous
+      <div className="mode-toggle">
+        <button
+          onClick={() => setMode("display")}
+          disabled={mode === "display"}
+        >
+          Display Mode
         </button>
         <button
-          onClick={goToNext}
-          disabled={currentQuestionIndex === session.questions.length - 1}
+          onClick={() => setMode("edit")}
+          disabled={mode === "edit"}
         >
-          Next
+          Edit Mode
         </button>
       </div>
+
+      <div className="main-layout">
+        <div className="passage-column">
+          <h2>Passage</h2>
+          {mode === "edit" ? (
+            <PassageEditor value={session.passage} onChange={updatePassage} />
+          ) : (
+              <div className="passage-box">
+              {session.passage}
+              </div>
+          )}
+        </div>
+
+        <div className="question-column">
+          <h2>Question {currentQuestionIndex + 1}</h2>
+          {mode === "edit" ? (
+            <QuestionEditor
+              question={currentQuestion}
+              qIndex={currentQuestionIndex}
+              onUpdate={(q) => updateQuestion(currentQuestionIndex, q)}
+            />
+          ) : (
+            <QuestionDisplay
+              question={currentQuestion}
+              qIndex={currentQuestionIndex} // TODO: fix qIndex
+              onSelectChoice={(choiceIndex) =>
+                updateChoice(currentQuestionIndex, choiceIndex)
+              }
+            />
+          )}
+        </div>
+
+      </div>
+      <div className="question-nav">
+        {session.questions.map((q, index) => {
+          const isActive = index === currentQuestionIndex;
+          const isAnswered = q.selectedChoice !== undefined;
+          return (
+            <div
+              key={index}
+              className={
+                "question-bubble" +
+                (isActive ? " active" : "") +
+                (isAnswered ? " answered" : "")
+              }
+              onClick={() => setCurrentQuestionIndex(index)}
+              title={`Question ${index + 1}`}
+            >
+              {index + 1}
+            </div>
+          );
+        })}
+
+        {mode === "edit" && (
+          <div
+            className="question-bubble new-question"
+            onClick={addNewQuestion}
+            title="Add new question"
+          >
+            +
+          </div>
+        )}
+      </div>
+
+        {mode === "display" && (
+          <button onClick={() => alert("Submit not implemented yet.")}>
+            Submit
+          </button>
+        )}
 
       <SessionControls session={session} onImport={importSession} />
     </div>

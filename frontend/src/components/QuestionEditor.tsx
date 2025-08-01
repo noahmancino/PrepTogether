@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 import type { Question as QuestionType } from "../types";
+import "../App.css"
 
 type Props = {
   question: QuestionType;
@@ -8,12 +9,19 @@ type Props = {
 
 export default function QuestionEditor({ question, onUpdate }: Props) {
   const updateStem = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    e.target.style.height = "auto";
+    e.target.style.height = `${e.target.scrollHeight}px`;
     onUpdate({ ...question, stem: e.target.value });
   };
 
   const updateChoice = (i: number, e: ChangeEvent<HTMLTextAreaElement>) => {
     const updatedChoices = [...question.choices];
     updatedChoices[i] = e.target.value;
+
+    // Auto-grow height up to max
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 150) + "px";
+
     onUpdate({ ...question, choices: updatedChoices });
   };
 
@@ -22,9 +30,9 @@ export default function QuestionEditor({ question, onUpdate }: Props) {
       <div className="question-stem">
         <label>
           <textarea
-            className="stem-textarea"
+            className="question-editor-textarea question-stem"
             value={question.stem}
-            onChange={updateStem}
+            onChange={(e) => updateStem(e)}
           />
         </label>
       </div>
@@ -34,7 +42,7 @@ export default function QuestionEditor({ question, onUpdate }: Props) {
           <label key={i} style={{ display: "block", marginTop: "0.5rem" }}>
             <strong>{String.fromCharCode(65 + i)}.</strong>
             <textarea
-              className="choice-textarea"
+              className="question-editor-textarea question-choice"
               value={choice}
               onChange={(e) => updateChoice(i, e)}
             />

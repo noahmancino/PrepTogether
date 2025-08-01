@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react";
+import "../App.css";
 
 type Props = {
   value: string;
@@ -7,12 +8,14 @@ type Props = {
 
 export default function PassageEditor({ value, onChange }: Props) {
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    e.target.style.height = "auto";
+    e.target.style.height = e.target.scrollHeight + "px";
     onChange(e.target.value);
   };
 
   return (
     <textarea
-      style={{ width: "100%", height: "120px" }}
+      className="passage-textarea"
       value={value}
       onChange={handleChange}
     />
