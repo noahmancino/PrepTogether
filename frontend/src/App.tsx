@@ -1,4 +1,8 @@
-import React, { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect } from "react";
+import QuestionDisplay from "./components/QuestionDisplay";
+import PassageEditor from "./components/PassageEditor";
+import SessionControls from "./components/SessionControls";
+import './App.css'
 
 type Question = {
   stem: string;
@@ -12,19 +16,35 @@ type Session = {
 };
 
 export default function App() {
-  const [session, setSession] = useState<Session>({
-    passage: "",
-    questions: [
-      {
-        stem: "What is the main point of the passage?",
-        choices: ["A", "B", "C", "D", "E"],
-      },
-      {
-        stem: "Which of the following most strengthens the argument?",
-        choices: ["A", "B", "C", "D", "E"],
-      },
-    ],
-  });
+const [session, setSession] = useState<Session>({
+  passage: `The rise of remote work has significantly altered the landscape of urban economies. 
+  Many companies now offer flexible schedules or fully remote positions, leading to decreased demand 
+  for commercial office space. This shift has also impacted public transit systems, downtown retail, 
+  and residential patterns.`,
+  questions: [
+    {
+      stem: "Which of the following most accurately expresses the main point of the passage?",
+      choices: [
+        "The shift to remote work has led to a permanent decrease in demand for commercial real estate in urban areas.",
+        "Urban economies are being reshaped due to the growing prevalence of remote work arrangements.",
+        "Companies are saving money by closing offices and encouraging employees to work from home.",
+        "Public transportation systems have become less relevant in the age of remote work.",
+        "Remote work has had no significant impact on urban retail or transit patterns."
+      ],
+    },
+    {
+      stem: "Which of the following, if true, would most strengthen the author's argument?",
+      choices: [
+        "A survey found that over 60% of workers prefer to work remotely at least three days a week.",
+        "Some cities have seen a small rebound in office leasing during the past six months.",
+        "Remote work has existed in various forms since the early 2000s.",
+        "Many remote workers report lower levels of work-life balance.",
+        "Office occupancy rates remain unchanged in suburban business parks."
+      ],
+    },
+  ],
+});
+
 
   // Load from localStorage if available
   useEffect(() => {
@@ -50,84 +70,32 @@ export default function App() {
     });
   };
 
-  const handlePassageChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setSession((prev) => ({ ...prev, passage: e.target.value }));
+  const updatePassage = (text: string) => {
+    setSession((prev) => ({ ...prev, passage: text }));
   };
 
-  const handleExport = () => {
-    const blob = new Blob([JSON.stringify(session, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "lsat-session.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        setSession(data);
-      } catch {
-        alert("Invalid session file.");
-      }
-    };
-    reader.readAsText(file);
+  const importSession = (data: Session) => {
+    setSession(data);
   };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "800px", margin: "auto" }}>
-      <h1>LSAT Tutor Tool</h1>
+    <div className={"app-container"}>
+      <h1>PrepTogether</h1>
 
       <h2>Passage</h2>
-      <textarea
-        style={{ width: "100%", height: "120px" }}
-        value={session.passage}
-        onChange={handlePassageChange}
-      />
+      <PassageEditor value={session.passage} onChange={updatePassage} />
 
       <h2>Questions</h2>
       {session.questions.map((q, qIndex) => (
-        <div key={qIndex} style={{ marginBottom: "1.5rem" }}>
-          <p><strong>{qIndex + 1}.</strong> {q.stem}</p>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            {q.choices.map((choice, cIndex) => (
-              <button
-                key={cIndex}
-                style={{
-                  padding: "0.5rem 1rem",
-                  background:
-                    q.selectedChoice === cIndex ? "#4ade80" : "#e5e7eb",
-                  border: "1px solid #ccc",
-                  borderRadius: "0.25rem",
-                }}
-                onClick={() => updateChoice(qIndex, cIndex)}
-              >
-                {choice}
-              </button>
-            ))}
-          </div>
-        </div>
+        <QuestionDisplay
+          key={qIndex}
+          question={q}
+          qIndex={qIndex}
+          onSelectChoice={(choiceIndex) => updateChoice(qIndex, choiceIndex)}
+        />
       ))}
 
-      <div style={{ marginTop: "2rem", display: "flex", gap: "1rem" }}>
-        <button onClick={handleExport}>Save to File</button>
-        <label>
-          Load from File:
-          <input
-            type="file"
-            accept=".json"
-            style={{ marginLeft: "0.5rem" }}
-            onChange={handleImport}
-          />
-        </label>
-      </div>
+      <SessionControls session={session} onImport={importSession} />
     </div>
   );
 }
