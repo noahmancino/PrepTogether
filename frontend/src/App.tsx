@@ -16,18 +16,6 @@ type Session = {
   questions: Question[];
 };
 
-const addNewQuestion = () => {
-  const newQuestion = {
-    stem: "",
-    choices: ["", "", "", "", ""],
-  };
-  setSession((prev) => ({
-    ...prev,
-    questions: [...prev.questions, newQuestion],
-  }));
-  setCurrentQuestionIndex(session.questions.length); // jump to new question
-};
-
 
 export default function App() {
   const [session, setSession] = useState<Session>({
@@ -58,6 +46,25 @@ export default function App() {
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [mode, setMode] = useState<"display" | "edit">("display");
+
+  const addNewQuestion = () => {
+    setSession((prev) => {
+      const updatedQuestions = [
+        ...prev.questions,
+        {
+          stem: "",
+          choices: ["", "", "", "", ""],
+        },
+      ];
+
+      // Safely compute the new index from the updated array length
+      const newIndex = updatedQuestions.length - 1;
+      setCurrentQuestionIndex(newIndex);
+
+      return { ...prev, questions: updatedQuestions };
+    });
+  };
+
 
   useEffect(() => {
     const saved = localStorage.getItem("lsat-session");
