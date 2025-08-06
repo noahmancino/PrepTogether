@@ -1,6 +1,9 @@
 export type AppState = {
-  tests: Record<string, Test>
-}
+  tests: Record<string, Test>;
+  activeTestId: string | null;
+  viewMode: "home" | "edit" | "display";
+  sessionInfo: CollaborativeSession | null;
+};
 
 export type Question = {
   stem: string;

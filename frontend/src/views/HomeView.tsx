@@ -1,51 +1,67 @@
+import type { AppState, Test } from "../Types.tsx";
+import "../App.css";
 import { useState } from "react";
-import type { Session } from "../Types.tsx";
 
 type Props = {
-  savedTests: Record<string, Session>;
-  onCreateNew: () => void;
-  onLoadTest: (test: Session, mode: "edit" | "display") => void;
+  appState: AppState;
+  setAppState: (newState: AppState) => void;
 };
 
-export default function HomeView({ savedTests, onCreateNew, onLoadTest }: Props) {
-  const [selectedTest, setSelectedTest] = useState<string | null>(null);
+export default function HomeView({ appState, setAppState }: Props) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const handleModePick = (mode: "edit" | "display") => {
-    if (!selectedTest) return;
-    const test = savedTests[selectedTest];
-    if (test) onLoadTest(test, mode);
+  const createTest = () => {
+    const newTestId = String(Date.now());
+    const newTest: Test = {
+      id: newTestId,
+      name: `New Test ${Object.keys(appState.tests).length + 1}`,
+      sections: [
+        {
+          passage: "",
+          questions: [],
+        },
+      ],
+    };
+
+    setAppState({
+      ...appState,
+      tests: {
+        ...appState.tests,
+        [newTestId]: newTest,
+      },
+      activeTestId: newTestId,
+      viewMode: "edit",
+    });
   };
 
-  const testNames = Object.keys(savedTests);
+  const openTest = (testId: string) => {
+    setAppState({
+      ...appState,
+      activeTestId: testId,
+      viewMode: "display",
+    });
+  };
 
   return (
-    <div className="home-container">
-      <h1>LSAT Session Tool</h1>
-      <button onClick={onCreateNew}>+ Create New Test</button>
-
-      {testNames.length > 0 && (
-        <div className="dropdown">
-          <p>Select existing test:</p>
-          <select
-            value={selectedTest || ""}
-            onChange={(e) => setSelectedTest(e.target.value)}
-          >
-            <option value="" disabled>
-              -- Choose a test --
-            </option>
-            {testNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-
-          {selectedTest && (
-            <div style={{ marginTop: "1rem" }}>
-              <button onClick={() => handleModePick("edit")}>Edit</button>
-              <button onClick={() => handleModePick("display")}>Display</button>
-            </div>
-          )}
+    <div className="home-view">
+      <h1>Welcome to the Test Manager</h1>
+      <div className="actions">
+        <button onClick={createTest}>Create New Test</button>
+        <button onClick={() => setDropdownOpen(!dropdownOpen)}>
+          {dropdownOpen ? "Close" : "+"}
+        </button>
+      </div>
+      {dropdownOpen && (
+        <div className="test-dropdown">
+          {Object.values(appState.tests).map((test) => (
+            <button
+              key={test.id}
+              className="test-item"
+              onClick={() => openTest(test.id)}
+            >
+              {test.name}
+            </button>
+          ))}
         </div>
       )}
     </div>

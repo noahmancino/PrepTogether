@@ -1,32 +1,66 @@
+import { useState } from "react";
 import Question from "../components/Questions.tsx";
-import type { Session } from "../types";
 
 type Props = {
-  session: Session;
-  setSession: (s: Session) => void;
+  passage: string;
+  questions: {
+    stem: string;
+    choices: string[];
+    selectedChoice?: number;
+    sectionIndex: number;
+    questionIndex: number;
+  }[];
+  onUpdate: (
+    sectionIndex: number,
+    questionIndex: number,
+    updatedQuestion: any
+  ) => void;
 };
 
-export default function DisplayView({ session, setSession }: Props) {
-  const updateChoice = (i: number, choiceIndex: number) => {
-    const updated = [...session.questions];
-    updated[i] = { ...updated[i], selectedChoice: choiceIndex };
-    setSession({ ...session, questions: updated });
+export default function DisplayView({ passage, questions, onUpdate }: Props) {
+  // State to track the currently active question
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // Handles updating the question when a choice is selected
+  const handleUpdateChoice = (choiceIndex: number) => {
+    const questionMeta = questions[currentQuestionIndex];
+    const updatedQuestion = { ...questionMeta, selectedChoice: choiceIndex };
+    onUpdate(questionMeta.sectionIndex, questionMeta.questionIndex, updatedQuestion);
   };
 
+  // Guard for no questions available
+  if (!questions || questions.length === 0) {
+    return <div className="error-message">No questions available.</div>;
+  }
+
   return (
-    <div className="view-container">
+    <div className="main-layout">
+      {/* Passage Section */}
       <div className="passage-column">
-        <p>{session.passage}</p>
+        <div className="passage-box">
+          <p>{passage}</p>
+        </div>
       </div>
-      <div className="questions-column">
-        {session.questions.map((q, i) => (
-          <Question
-            key={i}
-            editable={false}
-            question={q}
-            onSelectChoice={(choiceIndex) => updateChoice(i, choiceIndex)}
-          />
-        ))}
+
+      {/* Questions Section */}
+      <div className="question-column">
+        <Question
+          editable={false}
+          question={questions[currentQuestionIndex]}
+          onSelectChoice={(choiceIndex) => handleUpdateChoice(choiceIndex)}
+        />
+        {/* Navigation Area */}
+        <div className="question-nav">
+          {questions.map((_question, i) => (
+            <button
+              key={i}
+              className={`question-bubble ${i === currentQuestionIndex ? "active" : ""}`}
+              onClick={() => setCurrentQuestionIndex(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

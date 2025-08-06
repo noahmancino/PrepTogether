@@ -91,20 +91,31 @@ button:disabled {
 }
 
 .main-layout {
-  display: flex;
-  gap: 2rem;
-  align-items: flex-start;
+  display: flex; /* Horizontal alignment */
+  flex-direction: row; /* Align children side-by-side */
+  justify-content: space-between; /* Space out columns */
+  align-items: flex-start; /* Align content at the top */
+  width: 100%; /* Full page width */
+  gap: 20px; /* Space between the columns */
+  padding-top: 20px; /* Add spacing from the top of the screen */
 }
+
 
 /* Left column for passage */
 .passage-column {
-  flex: 1;
+  flex: 1; /* Smaller column */
+  padding: 5px; /* Inner padding for spacing */
+  padding-top: 10px; /* Add extra top space for better alignment */
 }
+
 
 /* Right column for question */
 .question-column {
-  flex: 1;
+  flex: 1.25; /* Larger column */
+  padding: 5px; /* Inner padding for spacing */
+  padding-top: 10px; /* Match column alignment with passage */
 }
+
 
 .passage-box {
   max-height: 1000px; /* or use vh, e.g. 40vh */
@@ -207,4 +218,38 @@ button:disabled {
 .question-bubble.new-question:hover {
   background-color: #555;
   color: white;
+}
+.home-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  color: #f3f4f6;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.test-dropdown {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.test-item {
+  padding: 0.5rem 1rem;
+  border: 1px solid #555;
+  background-color: #333;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.test-item:hover {
+  background-color: #444;
 }

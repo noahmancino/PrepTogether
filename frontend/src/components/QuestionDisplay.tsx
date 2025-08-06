@@ -1,4 +1,4 @@
-import type { Question as QuestionType } from "../types";
+import type { Question as QuestionType } from "../Types.tsx";
 
 type Props = {
   question: QuestionType;
