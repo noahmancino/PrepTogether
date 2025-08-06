@@ -91,30 +91,27 @@ button:disabled {
 }
 
 .main-layout {
-  display: flex; /* Horizontal alignment */
-  flex-direction: row; /* Align children side-by-side */
-  justify-content: space-between; /* Space out columns */
-  align-items: flex-start; /* Align content at the top */
-  width: 100%; /* Full page width */
-  gap: 20px; /* Space between the columns */
-  padding-top: 20px; /* Add spacing from the top of the screen */
+  display: grid;
+  grid-template-rows: auto 50px; /* Main content above, nav bar below */
+  grid-template-columns: repeat(12, 1fr); /* 12-column grid for flexibility */
+  gap: 20px;
+  height: 90vh; /* Ensure full viewport height for proper positioning */
 }
 
-
-/* Left column for passage */
+/* Passage Section (spans first 6 columns) */
 .passage-column {
-  flex: 1; /* Smaller column */
-  padding: 5px; /* Inner padding for spacing */
-  padding-top: 10px; /* Add extra top space for better alignment */
+  grid-column: span 6; /* First 6 columns */
+  overflow-y: auto; /* Add scroll for overflow content */
+  padding: 5% 10px 10px;
 }
 
-
-/* Right column for question */
+/* Questions Section (spans last 6 columns) */
 .question-column {
-  flex: 1.25; /* Larger column */
-  padding: 5px; /* Inner padding for spacing */
-  padding-top: 10px; /* Match column alignment with passage */
+  grid-column: span 6; /* Last 6 columns */
+  overflow-y: auto; /* Add scroll for overflow content */
+  padding: 10px;
 }
+
 
 
 .passage-box {

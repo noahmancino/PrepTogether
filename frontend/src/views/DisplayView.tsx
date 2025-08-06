@@ -18,7 +18,6 @@ type Props = {
 };
 
 export default function DisplayView({ passage, questions, onUpdate }: Props) {
-  // State to track the currently active question
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   // Handles updating the question when a choice is selected
@@ -28,7 +27,6 @@ export default function DisplayView({ passage, questions, onUpdate }: Props) {
     onUpdate(questionMeta.sectionIndex, questionMeta.questionIndex, updatedQuestion);
   };
 
-  // Guard for no questions available
   if (!questions || questions.length === 0) {
     return <div className="error-message">No questions available.</div>;
   }
@@ -50,18 +48,19 @@ export default function DisplayView({ passage, questions, onUpdate }: Props) {
           onSelectChoice={(choiceIndex) => handleUpdateChoice(choiceIndex)}
         />
       </div>
-      {/* Navigation Area */}
+
+      {/* Navigation Area (placed in a global layout position) */}
       <div className="question-nav">
-          {questions.map((_question, i) => (
-            <button
-              key={i}
-              className={`question-bubble ${i === currentQuestionIndex ? "active" : ""}`}
-              onClick={() => setCurrentQuestionIndex(i)}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
+        {questions.map((_question, i) => (
+          <button
+            key={i}
+            className={`question-bubble ${i === currentQuestionIndex ? "active" : ""}`}
+            onClick={() => setCurrentQuestionIndex(i)}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
