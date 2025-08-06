@@ -219,37 +219,108 @@ button:disabled {
   background-color: #555;
   color: white;
 }
+/* ========== Home View Styling ========== */
 .home-view {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
-  color: #f3f4f6;
+  font-family: Arial, sans-serif;
+  padding: 20px;
 }
 
-.actions {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+h1 {
+  margin-bottom: 20px;
 }
 
-.test-dropdown {
-  margin-top: 1rem;
+/* ========== Home View Styling ========== */
+.home-view {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  padding: 20px;
 }
 
-.test-item {
-  padding: 0.5rem 1rem;
-  border: 1px solid #555;
-  background-color: #333;
-  color: white;
-  border-radius: 4px;
+h1 {
+  margin-bottom: 20px;
+}
+
+/* ========== Action Buttons ========== */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.create-test-btn,
+.toggle-dropdown-btn {
+  font-size: 16px;
+  padding: 10px 20px;
+  border: none;
   cursor: pointer;
-  transition: background-color 0.2s;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Toggle the toggle button (+ or -) */
+.toggle-dropdown-btn {
+  font-size: 24px; /* Larger font size for the + or - */
+  background: transparent;
+  border: none;
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.toggle-dropdown-btn:hover {
+  transform: scale(1.2); /* Enlarge slightly on hover */
+}
+
+/* ========== Dropdown Menu Styling ========== */
+.test-dropdown {
+  overflow: hidden; /* Ensure hidden content does not show */
+  max-height: 0; /* Start collapsed */
+  transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out; /* Smooth expansion/collapse */
+  padding: 0 10px; /* Start with no padding when collapsed */
+  border: none;
+ background: none;
+ box-shadow: none;
+
+}
+
+/* Expanded Dropdown */
+.test-dropdown.open {
+  max-height: 300px; /* Adjust height to fit content */
+  padding: 10px; /* Add spacing inside */
+}
+
+/* Collapsed Dropdown */
+.test-dropdown.closed {
+  max-height: 0;
+  padding: 0;
+}
+
+/* Dropdown Items */
+.test-item {
+  all: unset;
+  display: block;
+  color: #fff; /* White text */
+  font-size: 16px; /* Adjust size if needed */
+  cursor: pointer; /* Looks interactive */
+  margin: 4px 0; /* Space between items */
+  transition: transform 0.2s ease, color 0.3s ease; /* Smooth hover transition */
 }
 
 .test-item:hover {
-  background-color: #444;
+  color: lightgray; /* Highlight color on hover */
+  transform: translateX(5px); /* Slightly shift to the right */
+}
+
+.test-item:focus {
+  outline: 2px solid lightgray; /* Focus outline for accessibility */
+  background-color: transparent;
 }

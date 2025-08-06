@@ -49,8 +49,9 @@ export default function DisplayView({ passage, questions, onUpdate }: Props) {
           question={questions[currentQuestionIndex]}
           onSelectChoice={(choiceIndex) => handleUpdateChoice(choiceIndex)}
         />
-        {/* Navigation Area */}
-        <div className="question-nav">
+      </div>
+      {/* Navigation Area */}
+      <div className="question-nav">
           {questions.map((_question, i) => (
             <button
               key={i}
@@ -61,7 +62,6 @@ export default function DisplayView({ passage, questions, onUpdate }: Props) {
             </button>
           ))}
         </div>
-      </div>
     </div>
   );
 }
