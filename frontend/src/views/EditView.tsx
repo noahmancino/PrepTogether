@@ -110,24 +110,27 @@ export default function EditView({ sections = [], onUpdateSection }: Props) {
   };
 
   return (
-    <div className="main-layout">
-      {/* Passage Column */}
-      <div className="passage-column">
-        <PassageEditor
-          value={currentSection.passage || ""}
-          onChange={handlePassageUpdate}
-        />
-      </div>
-
-      {/* Questions Column */}
-      <div className="question-column">
-        {/* Question Content */}
-        <div className="question-content">
-          <QuestionEditor
-            question={currentQuestion}
-            onUpdate={handleQuestionUpdate}
+    <div style={{ display: "block" }}>
+      <div className="main-layout">
+        {/* Passage Column */}
+        <div className="passage-column">
+          <PassageEditor
+            value={currentSection.passage || ""}
+            onChange={handlePassageUpdate}
           />
         </div>
+
+        {/* Questions Column */}
+        <div className="question-column">
+          {/* Question Content */}
+          <div className="question-content">
+            <QuestionEditor
+              question={currentQuestion}
+              onUpdate={handleQuestionUpdate}
+            />
+          </div>
+        </div>
+
       </div>
       {/* Question Navigation at the bottom */}
       <div className="question-nav">
@@ -184,7 +187,6 @@ export default function EditView({ sections = [], onUpdateSection }: Props) {
           )}
         </div>
       </div>
-
-    </div>
+      </div>
   );
 }
