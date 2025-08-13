@@ -26,6 +26,22 @@ const sampleTest: Test = {
         },
       ],
     },
+    {
+      passage: `Passage2...`,
+      questions: [
+        {
+          stem: "Which of the following most accurately expresses the main point of the passage?",
+          choices: [
+            "The shift to remote work has led to a permanent decrease in demand for commercial real estate in urban areas.",
+            "Urban economies are being reshaped due to the growing prevalence of remote work arrangements.",
+            "Companies are saving money by closing offices and encouraging employees to work from home.",
+            "Public transportation systems have become less relevant in the age of remote work.",
+            "Remote work has had no significant impact on urban retail or transit patterns.",
+          ],
+          selectedChoice: undefined,
+        },
+      ],
+    },
   ],
 };
 
@@ -69,22 +85,22 @@ export default function App() {
         />
       )}
 
-      {/* Display View */}
-      {appState.viewMode === "display" && activeTest && (
-        <DisplayView
-          passage={activeTest.sections[0]?.passage || ""}
-          questions={activeTest.sections.flatMap((section, sectionIndex) =>
-            section.questions.map((question, questionIndex) => ({
-              ...question,
-              sectionIndex,
-              questionIndex,
-            }))
-          )}
-          onUpdate={(sectionIndex, questionIndex, updatedQuestion) =>
-            updateQuestion(sectionIndex, questionIndex, updatedQuestion)
-          }
-        />
-      )}
+  {/* Display View */}
+  {appState.viewMode === "display" && activeTest && (
+    <DisplayView
+      sections={activeTest.sections.map((section, sectionIndex) => ({
+        passage: section.passage,
+        questions: section.questions.map((question, questionIndex) => ({
+          ...question,
+          sectionIndex,
+          questionIndex,
+        }))
+      }))}
+      onUpdate={(sectionIndex, questionIndex, updatedQuestion) =>
+        updateQuestion(sectionIndex, questionIndex, updatedQuestion)
+      }
+    />
+  )}
 
       {/* Edit View */}
       {appState.viewMode === "edit" && activeTest && (

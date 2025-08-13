@@ -321,3 +321,49 @@ h1 {
   outline: 2px solid lightgray; /* Focus outline for accessibility */
   background-color: transparent;
 }
+
+/* Add options dropdown */
+.add-options-container {
+  position: relative;
+  display: inline-block;
+}
+
+.add-options-dropdown {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background-color: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 150px;
+  margin-bottom: 8px;
+}
+
+.section-divider {
+  display: inline-block;
+  color: #888;
+  margin: 0 8px;
+  vertical-align: middle;
+}
+
+
+.add-options-dropdown button {
+  padding: 8px 16px;
+  border: none;
+  background-color: transparent;
+  color: #f3f4f6;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.add-options-dropdown button:hover {
+  background-color: #3a3a3a;
+}
+

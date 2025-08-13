@@ -1,110 +1,190 @@
-import { useState } from "react";
+import React, {useEffect, useState} from "react";
+import PassageEditor from "../components/PassageEditor";
+import QuestionEditor from "../components/QuestionEditor";
+import type {Question as QuestionType} from "../Types";
 
-type QuestionProps = {
-  stem: string;
-  choices: string[];
-  selectedChoice?: number;
-  sectionIndex: number;
-  questionIndex: number;
+type SectionType = {
+  passage: string;
+  questions: QuestionType[];
 };
 
 type Props = {
-  passage: string;
-  questions: QuestionProps[];
-  onUpdate: (
-    sectionIndex: number,
-    questionIndex: number,
-    updatedQuestion: any
-  ) => void;
-  onAddQuestion: () => void; // Function to handle adding a new question
-  onPassageUpdate: (updatedPassage: string) => void; // Function to handle passage updates
+  sections: SectionType[];
+  onUpdateSection: (index: number, updatedSection: SectionType) => void;
 };
 
-export default function EditView({
-  passage,
-  questions,
-  onUpdate,
-  onAddQuestion,
-  onPassageUpdate,
-}: Props) {
+export default function EditView({ sections = [], onUpdateSection }: Props) {
+  // Current section and question being edited
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [showAddOptions, setShowAddOptions] = useState(false);
 
-  // Handles updating the question when changes are made
-  const handleUpdateQuestion = (updatedField: string, value: any) => {
-    const questionMeta = questions[currentQuestionIndex];
-    const updatedQuestion = { ...questionMeta, [updatedField]: value };
-    onUpdate(questionMeta.sectionIndex, questionMeta.questionIndex, updatedQuestion);
+  // Ensure we always have at least one section with one question
+  useEffect(() => {
+    if (sections.length === 0) {
+      const newSection = { passage: "", questions: [createEmptyQuestion()] };
+      onUpdateSection(0, newSection);
+    } else if (sections[0] && (!sections[0].questions || sections[0].questions.length === 0)) {
+      const newSection = { ...sections[0], questions: [createEmptyQuestion()] };
+      onUpdateSection(0, newSection);
+    }
+  }, [sections, onUpdateSection]);
+
+  // Create an empty question with 5 choices
+  const createEmptyQuestion = (): QuestionType => ({
+    stem: "",
+    choices: ["", "", "", "", ""]
+  });
+
+  // Safe navigation - ensure sections exist
+  const safeSections = sections || [];
+  const currentSection = safeSections[currentSectionIndex] || { passage: "", questions: [] };
+  const currentQuestion =
+    currentSection.questions &&
+    currentSection.questions.length > 0 &&
+    currentSection.questions[currentQuestionIndex]
+      ? currentSection.questions[currentQuestionIndex]
+      : createEmptyQuestion();
+
+  // Handle updating a question
+  const handleQuestionUpdate = (updatedQuestion: QuestionType) => {
+    const updatedQuestions = [...currentSection.questions];
+    updatedQuestions[currentQuestionIndex] = updatedQuestion;
+
+    const updatedSection = {
+      ...currentSection,
+      questions: updatedQuestions
+    };
+
+    onUpdateSection(currentSectionIndex, updatedSection);
+  };
+
+  // Handle updating the passage
+  const handlePassageUpdate = (updatedPassage: string) => {
+    const updatedSection = {
+      ...currentSection,
+      passage: updatedPassage
+    };
+
+    onUpdateSection(currentSectionIndex, updatedSection);
+  };
+
+  // Add a new question to the current section
+  const addQuestion = () => {
+    const updatedQuestions = [...currentSection.questions, createEmptyQuestion()];
+    const updatedSection = {
+      ...currentSection,
+      questions: updatedQuestions
+    };
+
+    onUpdateSection(currentSectionIndex, updatedSection);
+    setCurrentQuestionIndex(updatedQuestions.length - 1);
+    setShowAddOptions(false);
+  };
+
+  const getTotalQuestionIndex = (sectionIndex: number, questionIndex: number) => {
+    for (let i = 0; i < sectionIndex; i++) {
+      const section = safeSections[i];
+      if (section.questions) {
+        questionIndex += section.questions.length;
+      }
+    }
+    return questionIndex;
+  }
+
+  // Add a new section
+  const addSection = () => {
+    const newSection = {
+      passage: "",
+      questions: [createEmptyQuestion()]
+    };
+
+    // Add the new section to the end
+    const newSectionIndex = safeSections.length;
+    onUpdateSection(newSectionIndex, newSection);
+
+    // Switch to the new section
+    setCurrentSectionIndex(newSectionIndex);
+    setCurrentQuestionIndex(0);
+    setShowAddOptions(false);
   };
 
   return (
     <div className="main-layout">
-      {/* Editable Passage Section */}
+      {/* Passage Column */}
       <div className="passage-column">
-        <div className="passage-box">
-          <textarea
-            className="passage-textarea"
-            value={passage}
-            onChange={(e) => onPassageUpdate(e.target.value)}
-            placeholder="Edit the passage here..."
+        <PassageEditor
+          value={currentSection.passage || ""}
+          onChange={handlePassageUpdate}
+        />
+      </div>
+
+      {/* Questions Column */}
+      <div className="question-column">
+        {/* Question Content */}
+        <div className="question-content">
+          <QuestionEditor
+            question={currentQuestion}
+            onUpdate={handleQuestionUpdate}
           />
         </div>
       </div>
-
-      {/* Editable Questions Section */}
-      <div className="question-column">
-        {questions.length > 0 ? (
-          <div className="editable-question">
-            <textarea
-              className="question-stem-textarea"
-              value={questions[currentQuestionIndex].stem}
-              onChange={(e) =>
-                handleUpdateQuestion("stem", e.target.value)
-              }
-              placeholder="Edit the question stem here..."
-            />
-            <div className="choices-section">
-              {questions[currentQuestionIndex].choices.map((choice, choiceIndex) => (
-                <textarea
-                  key={choiceIndex}
-                  className="choice-textarea"
-                  value={choice}
-                  onChange={(e) =>
-                    handleUpdateQuestion("choices", [
-                      ...questions[currentQuestionIndex].choices.slice(0, choiceIndex),
-                      e.target.value,
-                      ...questions[currentQuestionIndex].choices.slice(choiceIndex + 1),
-                    ])
-                  }
-                  placeholder={`Choice ${choiceIndex + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="error-message">No questions available. Use the new question button to add one!</div>
-        )}
-      </div>
-
-      {/* Navigation Area */}
+      {/* Question Navigation at the bottom */}
       <div className="question-nav">
-        {questions.map((_question, i) => (
-          <button
-            key={i}
-            className={`question-bubble ${i === currentQuestionIndex ? "active" : ""}`}
-            onClick={() => setCurrentQuestionIndex(i)}
-          >
-            {i + 1}
-          </button>
+        {safeSections.map((section, sectionIdx) => (
+          <React.Fragment key={sectionIdx}>
+            {section.questions && section.questions.map((question, questionIdx) => (
+              <button
+                key={`${sectionIdx}-${questionIdx}`}
+                className={`question-bubble ${
+                  sectionIdx === currentSectionIndex &&
+                  questionIdx === currentQuestionIndex
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() => {
+                  setCurrentSectionIndex(sectionIdx);
+                  setCurrentQuestionIndex(questionIdx);
+                }}
+              >
+                {getTotalQuestionIndex(sectionIdx, questionIdx) + 1}
+              </button>
+            ))}
+
+            {/* Section divider */}
+            {sectionIdx < safeSections.length - 1 && (
+              <span className="section-divider">|</span>
+            )}
+          </React.Fragment>
         ))}
 
-        {/* New Question Button */}
-        <button
-          className="question-bubble new-question"
-          onClick={onAddQuestion}
-        >
-          +
-        </button>
+        {/* Add new question/section button */}
+        <div className="add-options-container">
+          <button
+            className="question-bubble new-question"
+            onClick={() => setShowAddOptions(!showAddOptions)}
+            title="Add new content"
+          >
+            +
+          </button>
+
+          {showAddOptions && (
+            <div className="add-options-dropdown">
+              <button
+                onClick={addQuestion}
+              >
+                New Question
+              </button>
+              <button
+                onClick={addSection}
+              >
+                New Section
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
     </div>
   );
 }
