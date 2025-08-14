@@ -4,57 +4,15 @@ import type { AppState, Test, Section } from "./Types.tsx";
 import HomeView from "./views/HomeView";
 import EditView from "./views/EditView";
 import DisplayView from "./views/DisplayView";
+import {multipleTestsEditingState} from "./sampleStates.tsx";
 
-// Sample test definition with sample data
-const sampleTest: Test = {
-  id: "1",
-  name: "Sample Test",
-  sections: [
-    {
-      passage: `The rise of remote work has significantly altered the landscape of urban economies...`,
-      questions: [
-        {
-          stem: "Which of the following most accurately expresses the main point of the passage?",
-          choices: [
-            "The shift to remote work has led to a permanent decrease in demand for commercial real estate in urban areas.",
-            "Urban economies are being reshaped due to the growing prevalence of remote work arrangements.",
-            "Companies are saving money by closing offices and encouraging employees to work from home.",
-            "Public transportation systems have become less relevant in the age of remote work.",
-            "Remote work has had no significant impact on urban retail or transit patterns.",
-          ],
-          selectedChoice: undefined,
-        },
-      ],
-    },
-    {
-      passage: `Passage2...`,
-      questions: [
-        {
-          stem: "Which of the following most accurately expresses the main point of the passage?",
-          choices: [
-            "The shift to remote work has led to a permanent decrease in demand for commercial real estate in urban areas.",
-            "Urban economies are being reshaped due to the growing prevalence of remote work arrangements.",
-            "Companies are saving money by closing offices and encouraging employees to work from home.",
-            "Public transportation systems have become less relevant in the age of remote work.",
-            "Remote work has had no significant impact on urban retail or transit patterns.",
-          ],
-          selectedChoice: undefined,
-        },
-      ],
-    },
-  ],
-};
+
 
 // Main App component
 export default function App() {
   // Initialize the application's state
   const [appState, setAppState] = useState<AppState>({
-    tests: {
-      [sampleTest.id]: sampleTest,
-    },
-    activeTestId: null, // No test is selected by default
-    viewMode: "home", // Default view is "home"
-    sessionInfo: null,
+    ...multipleTestsEditingState
   });
 
   // Get the currently active test based on activeTestId

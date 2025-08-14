@@ -275,48 +275,81 @@ h1 {
 }
 
 /* ========== Dropdown Menu Styling ========== */
+/* ========== Test Dropdown Styles ========== */
 .test-dropdown {
-  overflow: hidden; /* Ensure hidden content does not show */
-  max-height: 0; /* Start collapsed */
-  transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out; /* Smooth expansion/collapse */
-  padding: 0 10px; /* Start with no padding when collapsed */
-  border: none;
- background: none;
- box-shadow: none;
-
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin-top: 10px;
 }
 
-/* Expanded Dropdown */
-.test-dropdown.open {
-  max-height: 300px; /* Adjust height to fit content */
-  padding: 10px; /* Add spacing inside */
-}
-
-/* Collapsed Dropdown */
 .test-dropdown.closed {
   max-height: 0;
-  padding: 0;
+  opacity: 0;
 }
 
-/* Dropdown Items */
+.test-dropdown.open {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.test-item-container {
+  position: relative;
+}
+
 .test-item {
-  all: unset;
-  display: block;
-  color: #fff; /* White text */
-  font-size: 16px; /* Adjust size if needed */
-  cursor: pointer; /* Looks interactive */
-  margin: 4px 0; /* Space between items */
-  transition: transform 0.2s ease, color 0.3s ease; /* Smooth hover transition */
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  user-select: none;
+  color: #f3f4f6;
 }
 
 .test-item:hover {
-  color: lightgray; /* Highlight color on hover */
-  transform: translateX(5px); /* Slightly shift to the right */
+  color: #ffffff;
 }
 
-.test-item:focus {
-  outline: 2px solid lightgray; /* Focus outline for accessibility */
-  background-color: transparent;
+.test-options-dropdown {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease;
+  padding-left: 25px;
+}
+
+.test-options-dropdown.open {
+  max-height: 100px;
+}
+
+.test-option {
+  padding: 8px 15px;
+  cursor: pointer;
+  color: #f3f4f6;
+  transition: color 0.2s;
+}
+
+.test-option:hover {
+  color: #ffffff;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.create-test-btn, .toggle-dropdown-btn {
+  padding: 8px 15px;
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.create-test-btn:hover, .toggle-dropdown-btn:hover {
+  background-color: #444;
 }
 
 /* Add options dropdown */

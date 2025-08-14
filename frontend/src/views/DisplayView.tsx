@@ -46,40 +46,40 @@ export default function DisplayView({ sections, onUpdate }: Props) {
   }
 
   return (
-    <div className="main-layout">
-      {/* Passage Section */}
-      <div className="passage-column">
-        <div className="passage-box">
-          <p>{sections[currentSectionIndex].passage}</p>
+      <div>
+        <div className="main-layout">
+          {/* Passage Section */}
+          <div className="passage-column">
+            <div className="passage-box">
+              <p>{sections[currentSectionIndex].passage}</p>
+            </div>
+          </div>
+
+          {/* Questions Section */}
+          <div className="question-column">
+            <Question
+              editable={false}
+              question={currentQuestion}
+              onSelectChoice={(choiceIndex) => handleUpdateChoice(choiceIndex)}
+            />
+          </div>
+        </div>
+        <div className="question-nav">
+          {allQuestions.map((question, i, arr) => (
+            <React.Fragment key={i}>
+              <button
+                className={`question-bubble ${i === currentGlobalQuestionIndex ? "active" : ""}`}
+                onClick={() => setCurrentGlobalQuestionIndex(i)}
+              >
+                {i + 1}
+              </button>
+              {/* Add section divider if next question is from a different section */}
+              {i < arr.length - 1 && question.sectionIndex !== arr[i + 1].sectionIndex && (
+                <span className="section-divider">|</span>
+              )}
+            </React.Fragment>
+          ))}
         </div>
       </div>
-
-      {/* Questions Section */}
-      <div className="question-column">
-        <Question
-          editable={false}
-          question={currentQuestion}
-          onSelectChoice={(choiceIndex) => handleUpdateChoice(choiceIndex)}
-        />
-      </div>
-
-      {/* Navigation Area with section dividers */}
-      <div className="question-nav">
-        {allQuestions.map((question, i, arr) => (
-          <React.Fragment key={i}>
-            <button
-              className={`question-bubble ${i === currentGlobalQuestionIndex ? "active" : ""}`}
-              onClick={() => setCurrentGlobalQuestionIndex(i)}
-            >
-              {i + 1}
-            </button>
-            {/* Add section divider if next question is from a different section */}
-            {i < arr.length - 1 && question.sectionIndex !== arr[i + 1].sectionIndex && (
-              <span className="section-divider">|</span>
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-    </div>
   );
 }

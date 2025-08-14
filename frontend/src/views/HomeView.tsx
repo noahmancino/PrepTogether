@@ -8,7 +8,8 @@ type Props = {
 };
 
 export default function HomeView({ appState, setAppState }: Props) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mainDropdownOpen, setMainDropdownOpen] = useState(false);
+  const [openTestId, setOpenTestId] = useState<string | null>(null);
 
   // Creates a new test and switches to Edit mode
   const createTest = () => {
@@ -35,8 +36,8 @@ export default function HomeView({ appState, setAppState }: Props) {
     });
   };
 
-  // Opens an existing test and switches to Display mode
-  const openTest = (testId: string) => {
+  // Opens an existing test for viewing
+  const viewTest = (testId: string) => {
     setAppState({
       ...appState,
       activeTestId: testId,
@@ -44,9 +45,33 @@ export default function HomeView({ appState, setAppState }: Props) {
     });
   };
 
-  // Toggles the dropdown state
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
+  // Opens an existing test for editing
+  const editTest = (testId: string) => {
+    setAppState({
+      ...appState,
+      activeTestId: testId,
+      viewMode: "edit", // Switch to edit mode
+    });
+  };
+
+  // Toggles the main dropdown state
+  const toggleMainDropdown = () => {
+    setMainDropdownOpen(!mainDropdownOpen);
+    // Close any open test dropdown when toggling the main dropdown
+    setOpenTestId(null);
+  };
+
+  // Toggles a specific test's dropdown
+  const toggleTestDropdown = (testId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the click from bubbling up
+
+    // If this test dropdown is already open, close it
+    if (openTestId === testId) {
+      setOpenTestId(null);
+    } else {
+      // Otherwise, open this test dropdown and close any other
+      setOpenTestId(testId);
+    }
   };
 
   return (
@@ -61,22 +86,39 @@ export default function HomeView({ appState, setAppState }: Props) {
         {/* Toggle Dropdown Button (appears as "+") */}
         <button
           className="toggle-dropdown-btn"
-          onClick={toggleDropdown}
+          onClick={toggleMainDropdown}
           aria-label="Toggle Dropdown"
         >
-          {dropdownOpen ? "-" : "+"} {/* Symbol toggles between + and - */}
+          {mainDropdownOpen ? "-" : "+"} {/* Symbol toggles between + and - */}
         </button>
       </div>
 
-      {/* Dropdown Menu */}
-      <div className={`test-dropdown ${dropdownOpen ? "open" : "closed"}`}>
+      {/* Main Dropdown Menu */}
+      <div className={`test-dropdown ${mainDropdownOpen ? "open" : "closed"}`}>
         {Object.values(appState.tests).map((test) => (
-          <div
-            key={test.id}
-            className="test-item"
-            onClick={() => openTest(test.id)}
-          >
-            {test.name}
+          <div key={test.id} className="test-item-container">
+            <div
+              className="test-item"
+              onClick={(e) => toggleTestDropdown(test.id, e)}
+            >
+              {test.name}
+            </div>
+
+            {/* Always render the options dropdown, but control visibility with CSS */}
+            <div className={`test-options-dropdown ${openTestId === test.id ? 'open' : ''}`}>
+              <div
+                className="test-option"
+                onClick={() => viewTest(test.id)}
+              >
+                View
+              </div>
+              <div
+                className="test-option"
+                onClick={() => editTest(test.id)}
+              >
+                Take
+              </div>
+            </div>
           </div>
         ))}
       </div>
