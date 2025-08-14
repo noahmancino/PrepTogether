@@ -397,3 +397,118 @@ h1 {
   background-color: #3a3a3a;
 }
 
+/* DisplayView.css */
+
+/* ToolbarStyles.css */
+
+/* ToolbarStyles.css */
+
+.tools-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #1e1e1e;
+  border-bottom: 1px solid #333;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Search Bar */
+.search-bar {
+  flex: 1;
+  max-width: 300px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #f3f4f6;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #666;
+}
+
+/* Highlight Tools */
+.highlight-tools {
+  display: flex;
+  gap: 10px;
+  margin: 0 20px;
+}
+
+.highlight-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background-color: #2d2d2d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.highlight-btn:hover {
+  background-color: #333;
+}
+
+.highlight-btn.active {
+  border-color: #888;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.highlight-icon {
+  font-weight: bold;
+  color: #ddd;
+}
+
+.yellow-icon {
+  background-color: rgba(255, 255, 0, 0.3);
+  padding: 2px 5px;
+  border-radius: 2px;
+}
+
+.blue-icon {
+  background-color: rgba(0, 191, 255, 0.3);
+  padding: 2px 5px;
+  border-radius: 2px;
+}
+
+/* Timer */
+.timer {
+  font-family: monospace;
+  font-size: 1.1rem;
+  color: #f3f4f6;
+  padding: 5px 10px;
+  background-color: #2d2d2d;
+  border-radius: 4px;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Search highlight styling */
+.search-highlight {
+  background-color: rgba(255, 105, 180, 0.3); /* Pink highlight for search */
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Add these highlight styles */
+.yellow-highlight {
+  background-color: rgba(255, 255, 0, 0.3);
+  border-radius: 2px;
+}
+
+.blue-highlight {
+  background-color: rgba(0, 191, 255, 0.3);
+  border-radius: 2px;
+}
