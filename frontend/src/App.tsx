@@ -57,6 +57,8 @@ export default function App() {
       onUpdate={(sectionIndex, questionIndex, updatedQuestion) =>
         updateQuestion(sectionIndex, questionIndex, updatedQuestion)
       }
+      setAppState={(updaterFn) => setAppState(prevState => updaterFn(prevState))}
+
     />
   )}
 
@@ -70,6 +72,7 @@ export default function App() {
             const updatedTests = { ...appState.tests, [activeTest.id]: { ...activeTest, sections: updatedSections } };
             setAppState({ ...appState, tests: updatedTests });
           }}
+          setAppState={(updaterFn) => setAppState(prevState => updaterFn(prevState))}
         />
       )}
     </div>

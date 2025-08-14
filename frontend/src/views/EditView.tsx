@@ -4,6 +4,7 @@ import QuestionEditor from "../components/QuestionEditor";
 import type {Question as QuestionType} from "../Types";
 import "../styles/App.css";
 import "../styles/EditView.css";
+import HomeButton from "../components/HomeButton.tsx";
 
 type SectionType = {
   passage: string;
@@ -13,9 +14,11 @@ type SectionType = {
 type Props = {
   sections: SectionType[];
   onUpdateSection: (index: number, updatedSection: SectionType) => void;
+  setAppState: (state: (prevState: any) => any) => void;
+
 };
 
-export default function EditView({ sections = [], onUpdateSection }: Props) {
+export default function EditView({ sections = [], onUpdateSection, setAppState }: Props) {
   // Current section and question being edited
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -113,6 +116,9 @@ export default function EditView({ sections = [], onUpdateSection }: Props) {
 
   return (
     <div style={{ display: "block" }}>
+      <div className="edit-home-button">
+        <HomeButton setAppState={setAppState} />
+      </div>
       <div className="main-layout">
         {/* Passage Column */}
         <div className="passage-column">

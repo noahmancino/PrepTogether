@@ -111,13 +111,13 @@ export default function HomeView({ appState, setAppState }: Props) {
                 className="test-option"
                 onClick={() => viewTest(test.id)}
               >
-                View
+                Take Test
               </div>
               <div
                 className="test-option"
                 onClick={() => editTest(test.id)}
               >
-                Take
+                Edit Test
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Question from "../components/Questions.tsx";
 import "../styles/App.css";
 import "../styles/DisplayView.css"
+import HomeButton from "../components/HomeButton.tsx";
 
 type HighlightType = "yellow" | "eraser" | "none";
 
@@ -21,9 +22,11 @@ type Props = {
     questionIndex: number,
     updatedQuestion: any
   ) => void;
+  setAppState: (state: (prevState: any) => any) => void;
+
 };
 
-export default function DisplayView({ sections, onUpdate }: Props) {
+export default function DisplayView({ sections, onUpdate, setAppState }: Props) {
   // Track current question across all sections
   const [currentGlobalQuestionIndex, setCurrentGlobalQuestionIndex] = useState(0);
 
@@ -65,7 +68,7 @@ const [passageHighlights, setPassageHighlights] = useState<{
   id: string;
   startIndex: number;
   endIndex: number;
-  type: 'yellow'; // Changed from 'yellow' | 'blue'
+  type: 'yellow';
 }[]>([]);
 
 // TODO: fix bug where partially highlighted words don't get a search highlight
@@ -380,7 +383,6 @@ const handleNextQuestion = () => {
 
   return (
     <div>
-      {/* Toolbar - with functionality restricted to passage */}
       <div className="tools-container">
         {/* Search Bar - only searches in passage */}
         <div className="search-bar">
@@ -411,13 +413,19 @@ const handleNextQuestion = () => {
           </button>
         </div>
 
-        {/* Timer */}
-        <div className="timer">
-          {formatTime(timer)}
+        <div className="header-controls">
+
+          <div className="timer">
+            {formatTime(timer)}
+          </div>
+
+          <div className="display-home-button">
+            <HomeButton setAppState={setAppState} />
+          </div>
+
         </div>
       </div>
 
-      {/* Original layout - kept intact */}
       <div className="main-layout">
         {/* Passage Section with highlighting capabilities */}
         <div className="passage-column">
