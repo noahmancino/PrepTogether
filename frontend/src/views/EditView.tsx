@@ -2,6 +2,8 @@ import React, {useEffect, useState} from "react";
 import PassageEditor from "../components/PassageEditor";
 import QuestionEditor from "../components/QuestionEditor";
 import type {Question as QuestionType} from "../Types";
+import "../styles/App.css";
+import "../styles/EditView.css";
 
 type SectionType = {
   passage: string;

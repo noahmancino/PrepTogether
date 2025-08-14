@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Question from "../components/Questions.tsx";
-import "../App.css"; // Create only toolbar-specific styles
+import "../styles/App.css";
+import "../styles/DisplayView.css"
 
 type HighlightType = "yellow" | "eraser" | "none";
 
@@ -335,16 +336,32 @@ const renderPassageWithHighlights = () => {
 };
 
 
+const handlePrevQuestion = () => {
+  if (currentGlobalQuestionIndex > 0) {
+    setCurrentGlobalQuestionIndex(currentGlobalQuestionIndex - 1);
 
-  // Apply search highlighting to passage text only
-  const processedPassage = searchTerm && searchTerm.length >= 3
-    ? {
-        __html: sections[currentSectionIndex].passage.replace(
-          new RegExp(`(${searchTerm})`, 'gi'),
-          match => `<span class="search-highlight">${match}</span>`
-        )
-      }
-    : { __html: sections[currentSectionIndex].passage };
+    // Reset the search term when changing questions
+    setSearchTerm("");
+
+    // Optionally, you may want to save any in-progress work on the current question
+    // before navigating away - add that logic here if needed
+  }
+};
+
+// Function to go to the next question
+const handleNextQuestion = () => {
+  if (currentGlobalQuestionIndex < allQuestions.length - 1) {
+    setCurrentGlobalQuestionIndex(currentGlobalQuestionIndex + 1);
+
+    // Reset the search term when changing questions
+    setSearchTerm("");
+
+    // Optionally, you may want to save any in-progress work on the current question
+    // before navigating away - add that logic here if needed
+  }
+};
+
+
 
   // Handle updating the question when a choice is selected
   const handleUpdateChoice = (choiceIndex: number) => {
@@ -438,6 +455,24 @@ const renderPassageWithHighlights = () => {
           </React.Fragment>
         ))}
       </div>
+
+      <div className="bottom-navigation">
+        <button
+          onClick={handlePrevQuestion}
+          disabled={currentGlobalQuestionIndex === 0}
+        >
+          <span className="arrow-icon">←</span>
+          Back
+        </button>
+        <button
+          onClick={handleNextQuestion}
+          disabled={currentGlobalQuestionIndex === allQuestions.length - 1}
+        >
+          Next
+          <span className="arrow-icon">→</span>
+        </button>
+      </div>
+
     </div>
   );
 }

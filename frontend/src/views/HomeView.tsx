@@ -1,6 +1,7 @@
 import type { AppState, Test } from "../Types.tsx";
-import "../App.css";
 import { useState } from "react";
+import "../styles/App.css";
+import "../styles/HomeView.css";
 
 type Props = {
   appState: AppState;

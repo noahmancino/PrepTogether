@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import "../App.css";
+import "../styles/App.css";
 
 type Props = {
   value: string;

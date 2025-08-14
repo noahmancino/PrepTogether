@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./App.css";
+import "./styles/App.css";
 import type { AppState, Test, Section } from "./Types.tsx";
 import HomeView from "./views/HomeView";
 import EditView from "./views/EditView";

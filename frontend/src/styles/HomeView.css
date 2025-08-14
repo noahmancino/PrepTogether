@@ -1,0 +1,117 @@
+.home-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+
+.test-dropdown {
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.test-dropdown.closed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.test-dropdown.open {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.test-item-container {
+  position: relative;
+}
+
+.test-item {
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  user-select: none;
+  color: #f3f4f6;
+}
+
+.test-item:hover {
+  color: #ffffff;
+}
+
+.test-options-dropdown {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease;
+  padding-left: 25px;
+}
+
+.test-options-dropdown.open {
+  max-height: 100px;
+}
+
+.test-option {
+  padding: 8px 15px;
+  cursor: pointer;
+  color: #f3f4f6;
+  transition: color 0.2s;
+}
+
+.test-option:hover {
+  color: #ffffff;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.create-test-btn, .toggle-dropdown-btn {
+  padding: 8px 15px;
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.create-test-btn:hover, .toggle-dropdown-btn:hover {
+  background-color: #444;
+}
+
+/*.create-test-btn,*/
+/*.toggle-dropdown-btn {*/
+/*  font-size: 16px;*/
+/*  padding: 10px 20px;*/
+/*  border: none;*/
+/*  cursor: pointer;*/
+/*  border-radius: 4px;*/
+/*  transition: background-color 0.3s ease, transform 0.2s ease;*/
+/*}*/
+
+/*!* Toggle the toggle button (+ or -) *!*/
+/*.toggle-dropdown-btn {*/
+/*  font-size: 24px; !* Larger font size for the + or - *!*/
+/*  background: transparent;*/
+/*  border: none;*/
+/*  color: white;*/
+/*  width: 50px;*/
+/*  height: 50px;*/
+/*  border-radius: 50%;*/
+/*  display: flex;*/
+/*  justify-content: center;*/
+/*  align-items: center;*/
+/*  transition: transform 0.2s ease;*/
+/*}*/
+
+/*.toggle-dropdown-btn:hover {*/
+/*  transform: scale(1.2); !* Enlarge slightly on hover *!*/
+/*}*/
