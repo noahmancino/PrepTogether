@@ -192,4 +192,11 @@ button:disabled {
   margin-right: 50px;
 }
 
-
+.section-divider {
+  width: 2px;
+  height: 24px;
+  background-color: #666;
+  margin: 0 8px;
+  display: inline-block;
+  vertical-align: middle;
+}

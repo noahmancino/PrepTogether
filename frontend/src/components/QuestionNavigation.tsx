@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type {Test, Question} from "../Types"; // Import the Test type
+import type {Test, Question} from "../Types.tsx"; // Import the Test type
 
 type QuestionNavigationProps = {
   // The test object containing sections and questions
@@ -33,63 +33,76 @@ export default function QuestionNavigation({
     setShowDropdown(!showDropdown);
   };
 
-  // Calculate the global question index for the current question
-  const calculateGlobalIndex = (sectionIdx: number, questionIdx: number): number => {
-    let globalIndex = questionIdx;
-    for (let i = 0; i < sectionIdx; i++) {
-      globalIndex += test.sections[i].questions.length;
-    }
-    return globalIndex;
-  };
-
   // Generate an array of all questions with their section and question indices
   const allQuestions: {
     question: Question;
     sectionIndex: number;
     questionIndex: number;
     globalIndex: number;
+    isFirstInSection: boolean;
   }[] = [];
 
+  let globalIndex = 0;
   test.sections.forEach((section, sectionIdx) => {
     section.questions.forEach((question, questionIdx) => {
       allQuestions.push({
         question,
         sectionIndex: sectionIdx,
         questionIndex: questionIdx,
-        globalIndex: calculateGlobalIndex(sectionIdx, questionIdx)
+        globalIndex: globalIndex++,
+        isFirstInSection: questionIdx === 0
       });
     });
   });
 
   // Calculate the current global index
-  const currentGlobalIndex = calculateGlobalIndex(currentSectionIndex, currentQuestionIndex);
+  const currentGlobalIndex = allQuestions.find(
+    q => q.sectionIndex === currentSectionIndex && q.questionIndex === currentQuestionIndex
+  )?.globalIndex || 0;
+
+  // Handle add button click based on test type
+  const handleAddButtonClick = () => {
+    if (test.type === "LR") {
+      // For LC, directly add a new section
+      onAddSection?.();
+    } else {
+      // For RC, toggle the dropdown
+      toggleDropdown();
+    }
+  };
 
   return (
     <div className="question-nav">
-      {allQuestions.map((item) => (
-        <button
-          key={`${item.sectionIndex}-${item.questionIndex}`}
-          className={`question-bubble 
-            ${item.globalIndex === currentGlobalIndex ? "active" : ""} 
-            ${item.question.selectedChoice !== undefined ? "answered" : ""}
-          `}
-          onClick={() => onQuestionSelect(item.sectionIndex, item.questionIndex)}
-        >
-          {item.globalIndex + 1}
-        </button>
+      {allQuestions.map((item, idx) => (
+        <React.Fragment key={`${item.sectionIndex}-${item.questionIndex}`}>
+          {/* Show section dividers only for RC tests and if this is the first question in a section (except the first section) */}
+          {test.type === "RC" && item.isFirstInSection && item.sectionIndex > 0 && (
+            <div className="section-divider" />
+          )}
+          <button
+            className={`question-bubble 
+              ${item.globalIndex === currentGlobalIndex ? "active" : ""} 
+              ${item.question.selectedChoice !== undefined ? "answered" : ""}
+            `}
+            onClick={() => onQuestionSelect(item.sectionIndex, item.questionIndex)}
+          >
+            {item.globalIndex + 1}
+          </button>
+        </React.Fragment>
       ))}
 
       {isEditView && (
         <div className="add-options-container">
           <button
             className="question-bubble new-question"
-            onClick={toggleDropdown}
-            title="Add Question or Section"
+            onClick={handleAddButtonClick}
+            title={test.type === "LR" ? "Add Section" : "Add Question or Section"}
           >
             +
           </button>
 
-          {showDropdown && (
+          {/* Show dropdown only for RC test type */}
+          {showDropdown && test.type === "RC" && (
             <div className="add-options-dropdown">
               <button onClick={() => {
                 onAddQuestion?.();

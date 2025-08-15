@@ -5,7 +5,7 @@ import type {Question as QuestionType, Test, Section} from "../Types";
 import "../styles/App.css";
 import "../styles/EditView.css";
 import HomeButton from "../components/HomeButton.tsx";
-
+import QuestionNavigation from "../components/QuestionNavigation.tsx";
 
 type Props = {
   test: Test;
@@ -18,7 +18,6 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
   // Current section and question being edited
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [showAddOptions, setShowAddOptions] = useState(false);
   const [testState, setTestState] = useState<Test>(test);
 
   // Ensure we always have at least one section with one question
@@ -87,18 +86,8 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
 
     onUpdateSection(currentSectionIndex, updatedSection);
     setCurrentQuestionIndex(updatedQuestions.length - 1);
-    setShowAddOptions(false);
   };
 
-  const getTotalQuestionIndex = (sectionIndex: number, questionIndex: number) => {
-    for (let i = 0; i < sectionIndex; i++) {
-      const section = safeSections[i];
-      if (section.questions) {
-        questionIndex += section.questions.length;
-      }
-    }
-    return questionIndex;
-  }
 
   // Add a new section
   const addSection = () => {
@@ -114,7 +103,6 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
     // Switch to the new section
     setCurrentSectionIndex(newSectionIndex);
     setCurrentQuestionIndex(0);
-    setShowAddOptions(false);
   };
 
   return (
@@ -151,61 +139,20 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
         </div>
 
       </div>
-      {/* Question Navigation at the bottom */}
-      <div className="question-nav">
-        {safeSections.map((section, sectionIdx) => (
-          <React.Fragment key={sectionIdx}>
-            {section.questions && section.questions.map((question, questionIdx) => (
-              <button
-                key={`${sectionIdx}-${questionIdx}`}
-                className={`question-bubble ${
-                  sectionIdx === currentSectionIndex &&
-                  questionIdx === currentQuestionIndex
-                    ? "active"
-                    : ""
-                }`}
-                onClick={() => {
-                  setCurrentSectionIndex(sectionIdx);
-                  setCurrentQuestionIndex(questionIdx);
-                }}
-              >
-                {getTotalQuestionIndex(sectionIdx, questionIdx) + 1}
-              </button>
-            ))}
 
-            {/* Section divider */}
-            {sectionIdx < safeSections.length - 1 && (
-              <span className="section-divider">|</span>
-            )}
-          </React.Fragment>
-        ))}
+      <QuestionNavigation
+        test={test}
+        currentSectionIndex={currentSectionIndex}
+        currentQuestionIndex={currentQuestionIndex}
+        onQuestionSelect={(sectionIndex, questionIndex) => {
+          setCurrentSectionIndex(sectionIndex);
+          setCurrentQuestionIndex(questionIndex);
+        }}
+        isEditView={true}
+        onAddQuestion={addQuestion}
+        onAddSection={addSection}
+      />
 
-        {/* Add new question/section button */}
-        <div className="add-options-container">
-          <button
-            className="question-bubble new-question"
-            onClick={() => setShowAddOptions(!showAddOptions)}
-            title="Add new content"
-          >
-            +
-          </button>
-
-          {showAddOptions && (
-            <div className="add-options-dropdown">
-              <button
-                onClick={addQuestion}
-              >
-                New Question
-              </button>
-              <button
-                onClick={addSection}
-              >
-                New Section
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-      </div>
+    </div>
   );
 }

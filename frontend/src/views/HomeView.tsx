@@ -16,6 +16,7 @@ export default function HomeView({ appState, setAppState }: Props) {
   const createTest = () => {
     const newTestId = String(Date.now());
     const newTest: Test = {
+      type: "RC",
       id: newTestId,
       name: `New Test ${Object.keys(appState.tests).length + 1}`,
       sections: [

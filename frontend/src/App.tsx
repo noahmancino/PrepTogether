@@ -50,14 +50,7 @@ export default function App() {
   {/* Display View */}
   {appState.viewMode === "display" && activeTest && (
     <DisplayView
-      sections={activeTest.sections.map((section, sectionIndex) => ({
-        passage: section.passage,
-        questions: section.questions.map((question, questionIndex) => ({
-          ...question,
-          sectionIndex,
-          questionIndex,
-        }))
-      }))}
+      test={activeTest}
       onUpdate={(sectionIndex, questionIndex, updatedQuestion) =>
         updateQuestion(sectionIndex, questionIndex, updatedQuestion)
       }

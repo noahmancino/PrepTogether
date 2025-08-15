@@ -29,5 +29,5 @@ export type Test = {
   id: string;
   name: string;
   sections: Section[];
-  // eventually: lrSections, lgSections
+  type: "RC" | "LR";
 };

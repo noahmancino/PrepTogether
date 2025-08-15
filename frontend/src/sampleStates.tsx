@@ -1,6 +1,7 @@
 import type {AppState, Test} from "./Types.tsx";
 
 const sampleTest: Test = {
+  type: "RC",
   id: "1",
   name: "Reading Comprehension Sample Test",
   sections: [
@@ -152,6 +153,7 @@ export const multipleTestsEditingState: AppState = {
   tests: {
     "1": sampleTest,
     "2": {
+      type: "LR",
       id: "2",
       name: "Science Assessment",
       sections: [
@@ -168,23 +170,13 @@ export const multipleTestsEditingState: AppState = {
                 "To split water molecules"
               ],
               selectedChoice: undefined
-            },
-            {
-              stem: "Which of the following is NOT a product of photosynthesis?",
-              choices: [
-                "Glucose",
-                "Oxygen",
-                "Water",
-                "ATP",
-                "Carbohydrates"
-              ],
-              selectedChoice: undefined
             }
           ]
         }
       ]
     },
     "3": {
+      type: "LR",
       id: "3",
       name: "Mathematics Test",
       sections: [
@@ -207,7 +199,7 @@ export const multipleTestsEditingState: AppState = {
       ]
     }
   },
-  activeTestId: "2",
+  activeTestId: null,
   viewMode: "home",
   sessionInfo: {
     userId: "user-789",

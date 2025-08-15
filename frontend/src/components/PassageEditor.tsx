@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef } from "react";
+import {type ChangeEvent, useEffect, useRef } from "react";
 import "../styles/App.css";
 
 type Props = {

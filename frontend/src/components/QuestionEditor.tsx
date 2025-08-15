@@ -1,7 +1,7 @@
-import React, {ChangeEvent} from "react";
+import {type ChangeEvent} from "react";
 import type {Question as QuestionType} from "../Types.tsx";
 import "../styles/App.css";
-import "../styles/DisplayView.css"
+import "../styles/EditView.css"
 
 type Props = {
   question: QuestionType;

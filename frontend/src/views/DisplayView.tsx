@@ -3,20 +3,13 @@ import Question from "../components/Questions.tsx";
 import "../styles/App.css";
 import "../styles/DisplayView.css"
 import HomeButton from "../components/HomeButton.tsx";
+import type {Test, Section} from "../Types.tsx";
+import QuestionNavigation from "../components/QuestionNavigation.tsx";
 
 type HighlightType = "yellow" | "eraser" | "none";
 
 type Props = {
-  sections: {
-    passage: string;
-    questions: {
-      stem: string;
-      choices: string[];
-      selectedChoice?: number;
-      sectionIndex: number;
-      questionIndex: number;
-    }[];
-  }[];
+  test: Test;
   onUpdate: (
     sectionIndex: number,
     questionIndex: number,
@@ -26,9 +19,17 @@ type Props = {
 
 };
 
-export default function DisplayView({ sections, onUpdate, setAppState }: Props) {
+export default function DisplayView({ test, onUpdate, setAppState }: Props) {
   // Track current question across all sections
-  const [currentGlobalQuestionIndex, setCurrentGlobalQuestionIndex] = useState(0);
+    const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  const safeSections = test.sections || [];
+  const currentSection = safeSections[currentSectionIndex] || { passage: "", questions: [] };
+  const currentQuestion =
+    currentSection.questions &&
+    currentSection.questions.length > 0 &&
+    currentSection.questions[currentQuestionIndex]
 
 
   // Timer state
@@ -40,12 +41,6 @@ export default function DisplayView({ sections, onUpdate, setAppState }: Props) 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Create a flat array of all questions for easier navigation
-  const allQuestions = sections.flatMap(section => section.questions);
-
-  // Get the current question and its section
-  const currentQuestion = allQuestions[currentGlobalQuestionIndex];
-  const currentSectionIndex = currentQuestion?.sectionIndex || 0;
 
   // Timer effect - start when component mounts
   useEffect(() => {
@@ -82,7 +77,7 @@ const handlePassageHighlight = () => {
   if (!selectionText) return;
 
   // Get the original passage text
-  const passageText = sections[currentSectionIndex].passage;
+  const passageText = currentSection.passage;
 
   // Find the selected text in the passage
   let selStartOffset = passageText.indexOf(selectionText);
@@ -152,7 +147,6 @@ const handlePassageHighlight = () => {
             endIndex: selStartOffset,
             type: 'yellow'
           });
-          continue;
         }
       }
 
@@ -211,7 +205,7 @@ const handlePassageHighlight = () => {
 
 // Fix the renderPassageWithHighlights function to properly handle search terms within highlights
 const renderPassageWithHighlights = () => {
-  let passage = sections[currentSectionIndex].passage;
+  let passage = currentSection.passage;
 
   // Create an array to track highlighting for each character position
   const highlightMap = new Array(passage.length).fill(null);
@@ -340,27 +334,31 @@ const renderPassageWithHighlights = () => {
 
 
 const handlePrevQuestion = () => {
-  if (currentGlobalQuestionIndex > 0) {
-    setCurrentGlobalQuestionIndex(currentGlobalQuestionIndex - 1);
+  if (currentQuestionIndex == 0 && currentSectionIndex == 0) {
+    return;
+  }
+  if (currentQuestionIndex > 0) {
+    setCurrentQuestionIndex(currentQuestionIndex - 1);
+  } else {
+    setCurrentSectionIndex(currentSectionIndex - 1);
+    setCurrentQuestionIndex(currentSection.questions.length - 1);
+  }
 
     // Reset the search term when changing questions
     setSearchTerm("");
 
-    // Optionally, you may want to save any in-progress work on the current question
-    // before navigating away - add that logic here if needed
-  }
 };
 
 // Function to go to the next question
 const handleNextQuestion = () => {
-  if (currentGlobalQuestionIndex < allQuestions.length - 1) {
-    setCurrentGlobalQuestionIndex(currentGlobalQuestionIndex + 1);
-
-    // Reset the search term when changing questions
-    setSearchTerm("");
-
-    // Optionally, you may want to save any in-progress work on the current question
-    // before navigating away - add that logic here if needed
+  if (currentQuestionIndex == currentSection.questions.length - 1 && currentSectionIndex == safeSections.length - 1) {
+    return;
+  }
+  if (currentQuestionIndex < currentSection.questions.length - 1) {
+    setCurrentQuestionIndex(currentQuestionIndex + 1);
+  } else {
+    setCurrentSectionIndex(currentSectionIndex + 1);
+    setCurrentQuestionIndex(0);
   }
 };
 
@@ -368,17 +366,12 @@ const handleNextQuestion = () => {
 
   // Handle updating the question when a choice is selected
   const handleUpdateChoice = (choiceIndex: number) => {
-    const questionMeta = allQuestions[currentGlobalQuestionIndex];
-    const updatedQuestion = { ...questionMeta, selectedChoice: choiceIndex };
-    onUpdate(questionMeta.sectionIndex, questionMeta.questionIndex, updatedQuestion);
+    const updatedQuestion = { ...currentQuestion, selectedChoice: choiceIndex };
+    onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
   };
 
-  if (!sections || sections.length === 0) {
+  if (safeSections.length === 0) {
     return <div className="error-message">No sections available.</div>;
-  }
-
-  if (!allQuestions || allQuestions.length === 0) {
-    return <div className="error-message">No questions available.</div>;
   }
 
   return (
@@ -447,34 +440,28 @@ const handleNextQuestion = () => {
         </div>
       </div>
 
-      <div className="question-nav">
-        {allQuestions.map((question, i, arr) => (
-          <React.Fragment key={i}>
-            <button
-              className={`question-bubble ${i === currentGlobalQuestionIndex ? "active" : ""}`}
-              onClick={() => setCurrentGlobalQuestionIndex(i)}
-            >
-              {i + 1}
-            </button>
-            {/* Add section divider if next question is from a different section */}
-            {i < arr.length - 1 && question.sectionIndex !== arr[i + 1].sectionIndex && (
-              <span className="section-divider">|</span>
-            )}
-          </React.Fragment>
-        ))}
-      </div>
+      <QuestionNavigation
+        test={test}
+        currentSectionIndex={currentSectionIndex}
+        currentQuestionIndex={currentQuestionIndex}
+        onQuestionSelect={(sectionIndex, questionIndex) => {
+          setCurrentSectionIndex(sectionIndex);
+          setCurrentQuestionIndex(questionIndex);
+        }}
+      />
 
       <div className="bottom-navigation">
         <button
           onClick={handlePrevQuestion}
-          disabled={currentGlobalQuestionIndex === 0}
+          disabled={currentSectionIndex === 0 && currentQuestionIndex === 0}
         >
           <span className="arrow-icon">←</span>
           Back
         </button>
         <button
           onClick={handleNextQuestion}
-          disabled={currentGlobalQuestionIndex === allQuestions.length - 1}
+          /* TODO: potential danger in case of empty sections */
+          disabled={currentSectionIndex === safeSections.length - 1 && currentQuestionIndex === currentSection.questions.length - 1}
         >
           Next
           <span className="arrow-icon">→</span>
