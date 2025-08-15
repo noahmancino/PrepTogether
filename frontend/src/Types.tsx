@@ -9,6 +9,7 @@ export type Question = {
   stem: string;
   choices: string[];
   selectedChoice?: number;
+  correctChoice?: number;
 };
 
 export type Section = {

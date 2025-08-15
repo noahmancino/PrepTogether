@@ -1,6 +1,6 @@
-import { useState } from "react";
+import {act, useState} from "react";
 import "./styles/App.css";
-import type { AppState, Test, Section } from "./Types.tsx";
+import type { AppState } from "./Types.tsx";
 import HomeView from "./views/HomeView";
 import EditView from "./views/EditView";
 import DisplayView from "./views/DisplayView";
@@ -32,6 +32,10 @@ export default function App() {
     const updatedTests = { ...appState.tests, [activeTest.id]: { ...activeTest, sections: updatedSections } };
     setAppState({ ...appState, tests: updatedTests });
   };
+
+  const updateTestName = (testId: string, updatedName: any) => {
+    setAppState({ ...appState, tests: { ...appState.tests, [testId]: { ...appState.tests[testId], name: updatedName } } });
+  }
 
   return (
     <div className="app-container">
@@ -65,7 +69,7 @@ export default function App() {
       {/* Edit View */}
       {appState.viewMode === "edit" && activeTest && (
         <EditView
-          sections={activeTest.sections}
+          test={activeTest}
           onUpdateSection={(index, updatedSection) => {
             const updatedSections = [...activeTest.sections];
             updatedSections[index] = updatedSection;
@@ -73,6 +77,7 @@ export default function App() {
             setAppState({ ...appState, tests: updatedTests });
           }}
           setAppState={(updaterFn) => setAppState(prevState => updaterFn(prevState))}
+          onUpdateTestName={updateTestName}
         />
       )}
     </div>

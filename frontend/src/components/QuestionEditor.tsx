@@ -1,28 +1,33 @@
-import type { ChangeEvent } from "react";
-import type { Question as QuestionType } from "../Types.tsx";
-import "../styles/App.css"
+import React, {ChangeEvent} from "react";
+import type {Question as QuestionType} from "../Types.tsx";
+import "../styles/App.css";
+import "../styles/DisplayView.css"
 
 type Props = {
   question: QuestionType;
   onUpdate: (updated: QuestionType) => void;
+
 };
 
-export default function QuestionEditor({ question, onUpdate }: Props) {
+export default function QuestionEditor({question, onUpdate}: Props) {
   const updateStem = (e: ChangeEvent<HTMLTextAreaElement>) => {
     e.target.style.height = "auto";
     e.target.style.height = `${e.target.scrollHeight}px`;
-    onUpdate({ ...question, stem: e.target.value });
+    onUpdate({...question, stem: e.target.value});
   };
 
   const updateChoice = (i: number, e: ChangeEvent<HTMLTextAreaElement>) => {
     const updatedChoices = [...question.choices];
     updatedChoices[i] = e.target.value;
 
-    // Auto-grow height up to max
     e.target.style.height = "auto";
     e.target.style.height = Math.min(e.target.scrollHeight, 150) + "px";
 
-    onUpdate({ ...question, choices: updatedChoices });
+    onUpdate({...question, choices: updatedChoices});
+  };
+
+  const handleCorrectChoiceChange = (choiceIndex: number) => {
+    onUpdate({...question, correctChoice: choiceIndex});
   };
 
   return (
@@ -32,20 +37,26 @@ export default function QuestionEditor({ question, onUpdate }: Props) {
           <textarea
             className="question-editor-textarea question-stem"
             value={question.stem}
-            onChange={(e) => updateStem(e)}
+            onChange={updateStem}
           />
         </label>
       </div>
       <div className="question-choices">
         <strong>Choices:</strong>
         {question.choices.map((choice, i) => (
-          <label key={i} style={{ display: "block", marginTop: "0.5rem" }}>
-            <strong>{String.fromCharCode(65 + i)}.</strong>
+          <label key={i} className="choice-label">
             <textarea
-              className="question-editor-textarea question-choice"
+              className={`question-editor-textarea question-choice ${question.correctChoice === i ? "active" : ""}`}
               value={choice}
               onChange={(e) => updateChoice(i, e)}
             />
+
+            <span
+              className={`choice-check ${question.correctChoice === i ? "active" : ""}`}
+              onClick={() => handleCorrectChoiceChange(i)}
+            >
+              ✓
+            </span>
           </label>
         ))}
       </div>

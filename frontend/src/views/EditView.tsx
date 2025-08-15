@@ -1,39 +1,36 @@
 import React, {useEffect, useState} from "react";
 import PassageEditor from "../components/PassageEditor";
 import QuestionEditor from "../components/QuestionEditor";
-import type {Question as QuestionType} from "../Types";
+import type {Question as QuestionType, Test, Section} from "../Types";
 import "../styles/App.css";
 import "../styles/EditView.css";
 import HomeButton from "../components/HomeButton.tsx";
 
-type SectionType = {
-  passage: string;
-  questions: QuestionType[];
-};
 
 type Props = {
-  sections: SectionType[];
-  onUpdateSection: (index: number, updatedSection: SectionType) => void;
+  test: Test;
+  onUpdateSection: (index: number, updatedSection: Section) => void;
   setAppState: (state: (prevState: any) => any) => void;
-
+  onUpdateTestName: (id:string, name:string) => void;
 };
 
-export default function EditView({ sections = [], onUpdateSection, setAppState }: Props) {
+export default function EditView({ test, onUpdateSection, setAppState, onUpdateTestName }: Props) {
   // Current section and question being edited
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showAddOptions, setShowAddOptions] = useState(false);
+  const [testState, setTestState] = useState<Test>(test);
 
   // Ensure we always have at least one section with one question
   useEffect(() => {
-    if (sections.length === 0) {
+    if (test.sections.length === 0) {
       const newSection = { passage: "", questions: [createEmptyQuestion()] };
       onUpdateSection(0, newSection);
-    } else if (sections[0] && (!sections[0].questions || sections[0].questions.length === 0)) {
-      const newSection = { ...sections[0], questions: [createEmptyQuestion()] };
+    } else if (test.sections[0] && (!test.sections[0].questions || test.sections[0].questions.length === 0)) {
+      const newSection = { ...test.sections[0], questions: [createEmptyQuestion()] };
       onUpdateSection(0, newSection);
     }
-  }, [sections, onUpdateSection]);
+  }, [test.sections, onUpdateSection]);
 
   // Create an empty question with 5 choices
   const createEmptyQuestion = (): QuestionType => ({
@@ -42,7 +39,7 @@ export default function EditView({ sections = [], onUpdateSection, setAppState }
   });
 
   // Safe navigation - ensure sections exist
-  const safeSections = sections || [];
+  const safeSections = test.sections || [];
   const currentSection = safeSections[currentSectionIndex] || { passage: "", questions: [] };
   const currentQuestion =
     currentSection.questions &&
@@ -72,6 +69,12 @@ export default function EditView({ sections = [], onUpdateSection, setAppState }
     };
 
     onUpdateSection(currentSectionIndex, updatedSection);
+  };
+
+  const handleTitleUpdate = (updatedTitle: string) => {
+    console.log(updatedTitle);
+    setTestState({...test, name: updatedTitle});
+    onUpdateTestName(test.id, updatedTitle);
   };
 
   // Add a new question to the current section
@@ -119,6 +122,14 @@ export default function EditView({ sections = [], onUpdateSection, setAppState }
       <div className="edit-home-button">
         <HomeButton setAppState={setAppState} />
       </div>
+      <input
+        className="heading-input"
+        contentEditable={true}
+        type="text"
+        value={testState.name}
+        onChange={(e) => handleTitleUpdate(e.target.value)}
+      >
+      </input>
       <div className="main-layout">
         {/* Passage Column */}
         <div className="passage-column">
