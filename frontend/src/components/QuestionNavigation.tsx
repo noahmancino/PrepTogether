@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type {Test, Question} from "../Types.tsx"; // Import the Test type
+import type {Test, Question} from "../Types.tsx";
 
 type QuestionNavigationProps = {
   // The test object containing sections and questions
@@ -11,8 +11,8 @@ type QuestionNavigationProps = {
   onQuestionSelect: (sectionIndex: number, questionIndex: number) => void;
   // Optional flags for adding questions/sections (for EditView only)
   isEditView?: boolean;
-  // Optional callbacks
-  onAddQuestion?: () => void;
+  // Updated callbacks with position information
+  onAddQuestion?: (sectionIndex: number, afterQuestionIndex: number) => void;
   onAddSection?: () => void;
 };
 
@@ -27,11 +27,6 @@ export default function QuestionNavigation({
 }: QuestionNavigationProps) {
   // State for the add options dropdown
   const [showDropdown, setShowDropdown] = useState(false);
-
-  // Toggle the dropdown
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
-  };
 
   // Generate an array of all questions with their section and question indices
   const allQuestions: {
@@ -63,63 +58,74 @@ export default function QuestionNavigation({
   // Handle add button click based on test type
   const handleAddButtonClick = () => {
     if (test.type === "LR") {
-      // For LC, directly add a new section
+      // For LR, directly add a new section
       onAddSection?.();
     } else {
       // For RC, toggle the dropdown
-      toggleDropdown();
+      setShowDropdown(prev => !prev);
     }
+  };
+
+  // Handle adding a question after the current position
+  const handleAddQuestion = () => {
+    // Pass the current section and question indices to add question after the current one
+    onAddQuestion?.(currentSectionIndex, currentQuestionIndex);
+    setShowDropdown(false);
   };
 
   return (
     <div className="question-nav">
-      {allQuestions.map((item, idx) => (
-        <React.Fragment key={`${item.sectionIndex}-${item.questionIndex}`}>
-          {/* Show section dividers only for RC tests and if this is the first question in a section (except the first section) */}
-          {test.type === "RC" && item.isFirstInSection && item.sectionIndex > 0 && (
-            <div className="section-divider" />
-          )}
-          <button
-            className={`question-bubble 
-              ${item.globalIndex === currentGlobalIndex ? "active" : ""} 
-              ${item.question.selectedChoice !== undefined ? "answered" : ""}
-            `}
-            onClick={() => onQuestionSelect(item.sectionIndex, item.questionIndex)}
-          >
-            {item.globalIndex + 1}
-          </button>
-        </React.Fragment>
-      ))}
+      {allQuestions.map((item, idx) => {
+        // Determine if this is the current active question
+        const isActiveQuestion = item.globalIndex === currentGlobalIndex;
 
-      {isEditView && (
-        <div className="add-options-container">
-          <button
-            className="question-bubble new-question"
-            onClick={handleAddButtonClick}
-            title={test.type === "LR" ? "Add Section" : "Add Question or Section"}
-          >
-            +
-          </button>
+        return (
+          <React.Fragment key={`${item.sectionIndex}-${item.questionIndex}`}>
+            {/* Show section dividers only for RC tests and if this is the first question in a section (except the first section) */}
+            {test.type === "RC" && item.isFirstInSection && item.sectionIndex > 0 && (
+              <div className="section-divider" />
+            )}
 
-          {/* Show dropdown only for RC test type */}
-          {showDropdown && test.type === "RC" && (
-            <div className="add-options-dropdown">
-              <button onClick={() => {
-                onAddQuestion?.();
-                setShowDropdown(false);
-              }}>
-                Add Question
-              </button>
-              <button onClick={() => {
-                onAddSection?.();
-                setShowDropdown(false);
-              }}>
-                Add Section
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+            <button
+              className={`question-bubble 
+                ${isActiveQuestion ? "active" : ""} 
+                ${item.question.selectedChoice !== undefined ? "answered" : ""}
+              `}
+              onClick={() => onQuestionSelect(item.sectionIndex, item.questionIndex)}
+            >
+              {item.globalIndex + 1}
+            </button>
+
+            {/* Show add button after the active question if in edit mode */}
+            {isEditView && isActiveQuestion && (
+              <div className="add-options-container">
+                <button
+                  className="question-bubble new-question"
+                  onClick={handleAddButtonClick}
+                  title={test.type === "LR" ? "Add Section" : "Add Question or Section"}
+                >
+                  +
+                </button>
+
+                {/* Show dropdown only for RC test type */}
+                {showDropdown && test.type === "RC" && (
+                  <div className="add-options-dropdown">
+                    <button onClick={handleAddQuestion}>
+                      Add Question
+                    </button>
+                    <button onClick={() => {
+                      onAddSection?.();
+                      setShowDropdown(false);
+                    }}>
+                      Add Section
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }

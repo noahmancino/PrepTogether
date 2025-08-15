@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import PassageEditor from "../components/PassageEditor";
 import QuestionEditor from "../components/QuestionEditor";
-import type {Question as QuestionType, Test, Section} from "../Types";
+import type {Question, Test, Section} from "../Types";
 import "../styles/App.css";
 import "../styles/EditView.css";
 import HomeButton from "../components/HomeButton.tsx";
@@ -32,7 +32,7 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
   }, [test.sections, onUpdateSection]);
 
   // Create an empty question with 5 choices
-  const createEmptyQuestion = (): QuestionType => ({
+  const createEmptyQuestion = (): Question => ({
     stem: "",
     choices: ["", "", "", "", ""]
   });
@@ -48,7 +48,7 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
       : createEmptyQuestion();
 
   // Handle updating a question
-  const handleQuestionUpdate = (updatedQuestion: QuestionType) => {
+  const handleQuestionUpdate = (updatedQuestion: Question) => {
     const updatedQuestions = [...currentSection.questions];
     updatedQuestions[currentQuestionIndex] = updatedQuestion;
 
@@ -76,17 +76,46 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
     onUpdateTestName(test.id, updatedTitle);
   };
 
-  // Add a new question to the current section
-  const addQuestion = () => {
-    const updatedQuestions = [...currentSection.questions, createEmptyQuestion()];
-    const updatedSection = {
-      ...currentSection,
-      questions: updatedQuestions
-    };
+const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
+  console.log("Adding question at section:", sectionIndex, "after question:", afterQuestionIndex);
 
-    onUpdateSection(currentSectionIndex, updatedSection);
-    setCurrentQuestionIndex(updatedQuestions.length - 1);
+  // Make sure section index is valid
+  if (sectionIndex === undefined || !safeSections[sectionIndex]) {
+    console.error(`Section with index ${sectionIndex} doesn't exist`);
+    return;
+  }
+
+  // Create a new empty question
+  const newQuestion: Question = {
+    stem: "",
+    choices: ["", "", "", "", ""]
   };
+
+  // Create a deep copy of the target section
+  const sectionToUpdate = { ...safeSections[sectionIndex] };
+
+  // Make sure questions array exists
+  if (!sectionToUpdate.questions) {
+    sectionToUpdate.questions = [];
+  }
+
+  // Create a copy of the questions array
+  const newQuestions = [...sectionToUpdate.questions];
+
+  // Insert the new question after the specified position
+  newQuestions.splice(afterQuestionIndex + 1, 0, newQuestion);
+
+  // Update the section with the new questions array
+  sectionToUpdate.questions = newQuestions;
+
+  // Update only the specific section
+  onUpdateSection(sectionIndex, sectionToUpdate);
+
+  // Navigate to the newly added question
+  setCurrentSectionIndex(sectionIndex);
+  setCurrentQuestionIndex(afterQuestionIndex + 1);
+};
+
 
 
   // Add a new section
