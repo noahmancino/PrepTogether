@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import type {Test, Question} from "../Types.tsx";
+import { Reorder, useDragControls } from "framer-motion";
+import type { Test, Question, Section } from "../Types.tsx";
 
 type QuestionNavigationProps = {
   // The test object containing sections and questions
@@ -14,6 +15,9 @@ type QuestionNavigationProps = {
   // Updated callbacks with position information
   onAddQuestion?: (sectionIndex: number, afterQuestionIndex: number) => void;
   onAddSection?: () => void;
+  // Callbacks for reordering
+  onReorderQuestions?: (sectionIndex: number, questions: Question[]) => void;
+  onReorderSections?: (sections: Section[]) => void;
 };
 
 export default function QuestionNavigation({
@@ -23,37 +27,16 @@ export default function QuestionNavigation({
   onQuestionSelect,
   isEditView = false,
   onAddQuestion,
-  onAddSection
+  onAddSection,
+  onReorderQuestions,
+  onReorderSections
 }: QuestionNavigationProps) {
   // State for the add options dropdown
   const [showDropdown, setShowDropdown] = useState(false);
-
-  // Generate an array of all questions with their section and question indices
-  const allQuestions: {
-    question: Question;
-    sectionIndex: number;
-    questionIndex: number;
-    globalIndex: number;
-    isFirstInSection: boolean;
-  }[] = [];
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedQuestion, setDraggedQuestion] = useState<{sectionIndex: number; question: Question} | null>(null);
 
   let globalIndex = 0;
-  test.sections.forEach((section, sectionIdx) => {
-    section.questions.forEach((question, questionIdx) => {
-      allQuestions.push({
-        question,
-        sectionIndex: sectionIdx,
-        questionIndex: questionIdx,
-        globalIndex: globalIndex++,
-        isFirstInSection: questionIdx === 0
-      });
-    });
-  });
-
-  // Calculate the current global index
-  const currentGlobalIndex = allQuestions.find(
-    q => q.sectionIndex === currentSectionIndex && q.questionIndex === currentQuestionIndex
-  )?.globalIndex || 0;
 
   // Handle add button click based on test type
   const handleAddButtonClick = () => {
@@ -73,59 +56,119 @@ export default function QuestionNavigation({
     setShowDropdown(false);
   };
 
+  const handleQuestionReorder = (sectionIdx: number, newQuestions: Question[]) => {
+    onReorderQuestions?.(sectionIdx, newQuestions);
+    if (draggedQuestion && draggedQuestion.sectionIndex === sectionIdx) {
+      const newIndex = newQuestions.indexOf(draggedQuestion.question);
+      onQuestionSelect(sectionIdx, newIndex);
+    }
+  };
+
+  const handleSectionReorder = (newSections: Section[]) => {
+    onReorderSections?.(newSections);
+    if (draggedQuestion) {
+      const newSectionIndex = newSections.findIndex(s => s.questions.includes(draggedQuestion.question));
+      const newQuestionIndex = newSections[newSectionIndex].questions.indexOf(draggedQuestion.question);
+      onQuestionSelect(newSectionIndex, newQuestionIndex);
+    }
+  };
+
+  const SectionItem = ({ section, sectionIdx }: { section: Section; sectionIdx: number }) => {
+    const controls = useDragControls();
+    return (
+      <Reorder.Item
+        value={section}
+        dragListener={test.type !== "RC"}
+        dragControls={controls}
+        style={{ display: "contents" }}
+      >
+        {test.type === "RC" && sectionIdx > 0 && (
+          <div
+            className="section-divider"
+            onPointerDown={(e) => controls.start(e)}
+          />
+        )}
+
+        <Reorder.Group
+          axis="x"
+          values={section.questions}
+          onReorder={(newQs) => handleQuestionReorder(sectionIdx, newQs)}
+          style={{ display: "contents" }}
+        >
+          {section.questions.flatMap((question, questionIdx) => {
+            const isActive =
+              sectionIdx === currentSectionIndex &&
+              questionIdx === currentQuestionIndex;
+            const number = globalIndex++;
+            const elements = [
+              <Reorder.Item
+                as="button"
+                value={question}
+                key={`q-${sectionIdx}-${questionIdx}`}
+                className={`question-bubble ${isActive ? "active" : ""} ${
+                  question.selectedChoice !== undefined ? "answered" : ""
+                }`}
+                onClick={() => onQuestionSelect(sectionIdx, questionIdx)}
+                onDragStart={() => {
+                  setIsDragging(true);
+                  setDraggedQuestion({ sectionIndex: sectionIdx, question });
+                  onQuestionSelect(sectionIdx, questionIdx);
+                }}
+                onDragEnd={() => {
+                  setIsDragging(false);
+                  setDraggedQuestion(null);
+                }}
+              >
+                {number + 1}
+              </Reorder.Item>
+            ];
+
+            if (isEditView && isActive && !isDragging) {
+              elements.push(
+                <div className="add-options-container" key={`add-${sectionIdx}-${questionIdx}`}>
+                  <button
+                    className="question-bubble new-question"
+                    onClick={handleAddButtonClick}
+                    title={
+                      test.type === "LR" ? "Add Section" : "Add Question or Section"
+                    }
+                  >
+                    +
+                  </button>
+                  {showDropdown && test.type === "RC" && (
+                    <div className="add-options-dropdown">
+                      <button onClick={handleAddQuestion}>Add Question</button>
+                      <button
+                        onClick={() => {
+                          onAddSection?.();
+                          setShowDropdown(false);
+                        }}
+                      >
+                        Add Section
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return elements;
+          })}
+        </Reorder.Group>
+      </Reorder.Item>
+    );
+  };
+
   return (
-    <div className="question-nav">
-      {allQuestions.map((item, idx) => {
-        // Determine if this is the current active question
-        const isActiveQuestion = item.globalIndex === currentGlobalIndex;
-
-        return (
-          <React.Fragment key={`${item.sectionIndex}-${item.questionIndex}`}>
-            {/* Show section dividers only for RC tests and if this is the first question in a section (except the first section) */}
-            {test.type === "RC" && item.isFirstInSection && item.sectionIndex > 0 && (
-              <div className="section-divider" />
-            )}
-
-            <button
-              className={`question-bubble 
-                ${isActiveQuestion ? "active" : ""} 
-                ${item.question.selectedChoice !== undefined ? "answered" : ""}
-              `}
-              onClick={() => onQuestionSelect(item.sectionIndex, item.questionIndex)}
-            >
-              {item.globalIndex + 1}
-            </button>
-
-            {/* Show add button after the active question if in edit mode */}
-            {isEditView && isActiveQuestion && (
-              <div className="add-options-container">
-                <button
-                  className="question-bubble new-question"
-                  onClick={handleAddButtonClick}
-                  title={test.type === "LR" ? "Add Section" : "Add Question or Section"}
-                >
-                  +
-                </button>
-
-                {/* Show dropdown only for RC test type */}
-                {showDropdown && test.type === "RC" && (
-                  <div className="add-options-dropdown">
-                    <button onClick={handleAddQuestion}>
-                      Add Question
-                    </button>
-                    <button onClick={() => {
-                      onAddSection?.();
-                      setShowDropdown(false);
-                    }}>
-                      Add Section
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
+    <Reorder.Group
+      axis="x"
+      values={test.sections}
+      onReorder={handleSectionReorder}
+      className="question-nav"
+    >
+      {test.sections.map((section, idx) => (
+        <SectionItem key={`s-${idx}`} section={section} sectionIdx={idx} />
+      ))}
+    </Reorder.Group>
   );
 }

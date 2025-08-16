@@ -119,7 +119,7 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
 
 
   // Add a new section
-  const addSection = () => {
+const addSection = () => {
     const newSection = {
       passage: "",
       questions: [createEmptyQuestion()]
@@ -130,9 +130,33 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
     onUpdateSection(newSectionIndex, newSection);
 
     // Switch to the new section
-    setCurrentSectionIndex(newSectionIndex);
-    setCurrentQuestionIndex(0);
-  };
+  setCurrentSectionIndex(newSectionIndex);
+  setCurrentQuestionIndex(0);
+};
+
+const reorderQuestions = (sectionIdx: number, newQuestions: Question[]) => {
+  const updatedSection = { ...safeSections[sectionIdx], questions: newQuestions };
+  onUpdateSection(sectionIdx, updatedSection);
+
+  if (sectionIdx === currentSectionIndex) {
+    const newIndex = newQuestions.indexOf(currentQuestion);
+    setCurrentQuestionIndex(newIndex);
+  }
+};
+
+const reorderSections = (newSections: Section[]) => {
+  setAppState(prev => {
+    const activeId = prev.activeTestId!;
+    const active = prev.tests[activeId];
+    return {
+      ...prev,
+      tests: { ...prev.tests, [activeId]: { ...active, sections: newSections } }
+    };
+  });
+
+  const newIndex = newSections.indexOf(safeSections[currentSectionIndex]);
+  setCurrentSectionIndex(newIndex);
+};
 
   return (
     <div style={{ display: "block" }}>
@@ -180,6 +204,8 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
         isEditView={true}
         onAddQuestion={addQuestion}
         onAddSection={addSection}
+        onReorderQuestions={reorderQuestions}
+        onReorderSections={reorderSections}
       />
 
     </div>
