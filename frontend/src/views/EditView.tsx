@@ -134,6 +134,28 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
     setCurrentQuestionIndex(0);
   };
 
+  const reorderQuestions = (sectionIndex: number, newQuestions: Question[]) => {
+    const updatedSection = { ...safeSections[sectionIndex], questions: newQuestions };
+    onUpdateSection(sectionIndex, updatedSection);
+    if (sectionIndex === currentSectionIndex) {
+      const movedQuestion = safeSections[sectionIndex].questions[currentQuestionIndex];
+      const newIndex = newQuestions.indexOf(movedQuestion);
+      setCurrentQuestionIndex(newIndex);
+    }
+  };
+
+  const reorderSections = (newSections: Section[]) => {
+    setAppState(prev => {
+      const tests = { ...prev.tests };
+      const current = tests[test.id];
+      tests[test.id] = { ...current, sections: newSections };
+      return { ...prev, tests };
+    });
+    const movedSection = safeSections[currentSectionIndex];
+    const newIdx = newSections.indexOf(movedSection);
+    setCurrentSectionIndex(newIdx);
+  };
+
   return (
     <div style={{ display: "block" }}>
       <div className="edit-home-button">
@@ -180,6 +202,8 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
         isEditView={true}
         onAddQuestion={addQuestion}
         onAddSection={addSection}
+        onReorderQuestions={reorderQuestions}
+        onReorderSections={reorderSections}
       />
 
     </div>
