@@ -9,16 +9,39 @@ type Props = {
 };
 
 export default function HomeView({ appState, setAppState }: Props) {
-  const [mainDropdownOpen, setMainDropdownOpen] = useState(false);
+  const [mainDropdownOpen, setMainDropdownOpen] = useState(true);
   const [openTestId, setOpenTestId] = useState<string | null>(null);
+  const [testCreationOpen, setTestCreationOpen] = useState(false);
+  const [newTestName, setNewTestName] = useState("");
+  const [newTestType, setNewTestType] = useState<"RC" | "LR">("RC");
+
+  const toggleTestCreation = () => {
+    setMainDropdownOpen(false);
+    setOpenTestId(null);
+    setTestCreationOpen(!testCreationOpen);
+  };
+
+  const toggleMainDropdown = () => {
+    setMainDropdownOpen(!mainDropdownOpen);
+    setOpenTestId(null);
+    setTestCreationOpen(false);
+  };
+
+  const handleTestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newTestName.trim()) {
+      createTest(newTestName, newTestType);
+    }
+  };
+
 
   // Creates a new test and switches to Edit mode
-  const createTest = () => {
+  const createTest = (name: string, type: "RC" | "LR") => {
     const newTestId = String(Date.now());
     const newTest: Test = {
-      type: "RC",
+      type: type,
       id: newTestId,
-      name: `New Test ${Object.keys(appState.tests).length + 1}`,
+      name: name,
       sections: [
         {
           passage: "",
@@ -37,6 +60,7 @@ export default function HomeView({ appState, setAppState }: Props) {
       viewMode: "edit", // Switch to edit mode
     });
   };
+
 
   // Opens an existing test for viewing
   const viewTest = (testId: string) => {
@@ -65,13 +89,6 @@ export default function HomeView({ appState, setAppState }: Props) {
     });
   }
 
-  // Toggles the main dropdown state
-  const toggleMainDropdown = () => {
-    setMainDropdownOpen(!mainDropdownOpen);
-    // Close any open test dropdown when toggling the main dropdown
-    setOpenTestId(null);
-  };
-
   // Toggles a specific test's dropdown
   const toggleTestDropdown = (testId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent the click from bubbling up
@@ -89,8 +106,8 @@ export default function HomeView({ appState, setAppState }: Props) {
     <div className="home-view">
       <h1>Welcome to the Test Manager</h1>
       <div className="actions">
-        {/* Create New Test Button */}
-        <button className="create-test-btn" onClick={createTest}>
+        {/* Create New Test Button - now toggles the creation form */}
+        <button className="create-test-btn" onClick={toggleTestCreation}>
           Create New Test
         </button>
 
@@ -103,6 +120,52 @@ export default function HomeView({ appState, setAppState }: Props) {
           {mainDropdownOpen ? "-" : "+"} {/* Symbol toggles between + and - */}
         </button>
       </div>
+
+      {/* Test Creation Dropdown */}
+      <div className={`test-creation-dropdown ${testCreationOpen ? "open" : "closed"}`}>
+        <form onSubmit={handleTestSubmit} className="test-creation-form">
+          <div className="form-group">
+            <label htmlFor="test-name">Test Name:</label>
+            <input
+              type="text"
+              id="test-name"
+              value={newTestName}
+              onChange={(e) => setNewTestName(e.target.value)}
+              placeholder="Enter test name"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <div className="radio-group">
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="test-type"
+                  value="RC"
+                  checked={newTestType === "RC"}
+                  onChange={() => setNewTestType("RC")}
+                />
+                RC
+              </label>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="test-type"
+                  value="LR"
+                  checked={newTestType === "LR"}
+                  onChange={() => setNewTestType("LR")}
+                />
+                LR
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" className="submit-test-btn">Create Test</button>
+          <button className="cancel-test-btn" onClick={toggleTestCreation}>Cancel</button>
+        </form>
+      </div>
+
 
       {/* Main Dropdown Menu */}
       <div className={`test-dropdown ${mainDropdownOpen ? "open" : "closed"}`}>

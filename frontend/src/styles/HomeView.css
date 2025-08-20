@@ -115,3 +115,83 @@ h1 {
 /*.toggle-dropdown-btn:hover {*/
 /*  transform: scale(1.2); !* Enlarge slightly on hover *!*/
 /*}*/
+
+/* Test Creation Dropdown Styles */
+.test-creation-dropdown {
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.test-creation-dropdown.closed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+  border: none;
+}
+
+.test-creation-dropdown.open {
+  max-height: 300px;
+  opacity: 1;
+  padding: 15px;
+}
+
+.test-creation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: bold;
+  color: #f3f4f6;
+}
+
+.form-group input[type="text"] {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background-color: #333;
+  color: white;
+  font-size: 1rem;
+}
+
+.radio-group {
+  display: flex;
+  gap: 20px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.submit-test-btn {
+  background-color: #4ade80;
+  color: #1a1a1a;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 5px;
+}
+
+.submit-test-btn:hover {
+  background-color: #22c55e;
+}

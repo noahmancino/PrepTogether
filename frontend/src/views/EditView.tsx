@@ -106,7 +106,7 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
     }
     const newSections = [...safeSections];
     newSections.splice(sectionIndex, 1);
-    setCurrentQuestionIndex(0);
+
     setAppState(prev =>
     {
       const tests = { ...prev.tests };
@@ -114,6 +114,9 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
       tests[test.id] = { ...current, sections: newSections };
       return { ...prev, tests };
     })
+    const newSectionIndex = Math.min(sectionIndex, newSections.length - 1);
+    setCurrentSectionIndex(Math.max(newSectionIndex, 0));
+    setCurrentQuestionIndex(0);
   }
 
 const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
@@ -245,16 +248,25 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
         onReorderQuestions={reorderQuestions}
         onReorderSections={reorderSections}
       />
+      {test.type === "RC" && (
+        <div className="bottom-delete">
+          <button
+              onClick={() => handleQuestionDelete(currentSectionIndex, currentQuestionIndex)}
+          >Delete Question</button>
+          <button
+              onClick={() => handleSectionDelete(currentSectionIndex)}>
+            Delete Section
+          </button>
+        </div>
+      )}
 
-      <div className="bottom-delete">
-        <button
-            onClick={() => handleQuestionDelete(currentSectionIndex, currentQuestionIndex)}
-        >Delete Question</button>
-        <button
-            onClick={() => handleSectionDelete(currentSectionIndex)}>
-          Delete Section
-        </button>
-      </div>
+      {test.type === "LR" && (
+        <div className="bottom-delete">
+          <button
+              onClick={() => handleSectionDelete(currentSectionIndex)}
+          >Delete Question</button>
+        </div>
+      )}
 
     </div>
   );
