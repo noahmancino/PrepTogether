@@ -76,6 +76,46 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
     onUpdateTestName(test.id, updatedTitle);
   };
 
+  const handleQuestionDelete = (sectionIndex: number, questionIndex: number) => {
+    console.log("Deleting question at section:", sectionIndex, "question:", questionIndex);
+    if (sectionIndex === undefined || !safeSections[sectionIndex]) {
+      console.error(`Section with index ${sectionIndex} doesn't exist`);
+      return;
+    }
+    if (safeSections[sectionIndex].questions.length <= 1) {
+      onUpdateSection(sectionIndex, { ...safeSections[sectionIndex], questions: [] });
+      return;
+    }
+    const newQuestions = [...safeSections[sectionIndex].questions];
+    newQuestions.splice(questionIndex, 1);
+    const newSection = { ...safeSections[sectionIndex], questions: newQuestions };
+    onUpdateSection(sectionIndex, newSection);
+    const newQuestionIndex = Math.min(questionIndex, newQuestions.length - 1);
+    setCurrentQuestionIndex(Math.max(newQuestionIndex, 0));
+    console.log(currentQuestionIndex)
+  }
+
+  const handleSectionDelete = (sectionIndex: number) => {
+    if (sectionIndex === undefined || !safeSections[sectionIndex]) {
+      console.error(`Section with index ${sectionIndex} doesn't exist`);
+      return;
+    }
+    if (safeSections.length <= 1) {
+      onUpdateSection(sectionIndex, { passage: "", questions: [] });
+      return;
+    }
+    const newSections = [...safeSections];
+    newSections.splice(sectionIndex, 1);
+    setCurrentQuestionIndex(0);
+    setAppState(prev =>
+    {
+      const tests = { ...prev.tests };
+      const current = tests[test.id];
+      tests[test.id] = { ...current, sections: newSections };
+      return { ...prev, tests };
+    })
+  }
+
 const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
   console.log("Adding question at section:", sectionIndex, "after question:", afterQuestionIndex);
 
@@ -205,6 +245,16 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
         onReorderQuestions={reorderQuestions}
         onReorderSections={reorderSections}
       />
+
+      <div className="bottom-delete">
+        <button
+            onClick={() => handleQuestionDelete(currentSectionIndex, currentQuestionIndex)}
+        >Delete Question</button>
+        <button
+            onClick={() => handleSectionDelete(currentSectionIndex)}>
+          Delete Section
+        </button>
+      </div>
 
     </div>
   );

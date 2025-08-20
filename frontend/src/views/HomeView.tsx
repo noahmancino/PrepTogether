@@ -56,6 +56,15 @@ export default function HomeView({ appState, setAppState }: Props) {
     });
   };
 
+  const deleteTest = (testId: string) => {
+    const newTests = {...appState.tests};
+    delete newTests[testId];
+    setAppState({
+      ...appState,
+      tests: newTests,
+    });
+  }
+
   // Toggles the main dropdown state
   const toggleMainDropdown = () => {
     setMainDropdownOpen(!mainDropdownOpen);
@@ -119,6 +128,12 @@ export default function HomeView({ appState, setAppState }: Props) {
                 onClick={() => editTest(test.id)}
               >
                 Edit Test
+              </div>
+              <div
+                className="test-option"
+                onClick={() => deleteTest(test.id)}
+              >
+                Delete Test
               </div>
             </div>
           </div>

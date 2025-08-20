@@ -88,6 +88,7 @@
 .heading-input {
   font-size: 2rem;
   font-weight: bold;
+  font-style: italic;
   border: none;
   background: transparent;
   width: 100%;
@@ -104,7 +105,7 @@
 }
 
 .heading-input:hover {
-  color: lightgray; /* Change to whatever color you want on hover */
+  color: gray; /* Change to whatever color you want on hover */
   background: transparent; /* Explicitly keep background transparent */
 }
 
@@ -166,4 +167,27 @@
 .question-choice.active {
   background-color: #3a3a3a; /* A lighter shade */
   color: #f3f4f6;
+}
+
+.bottom-delete button {
+  padding: 8px 12px;
+  background-color: transparent; /* Match app background */
+  border: 1px solid #ccc;
+  margin-right: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.bottom-delete button:hover {
+  background-color: #444;
+}
+
+.bottom-delete {
+  display: flex;
+  margin-top: 2rem;
 }
