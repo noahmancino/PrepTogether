@@ -171,21 +171,20 @@ button:disabled {
 }
 
 .home-button {
+  font-size: 1.25rem;
   display: block;
-  top: 15px;
-  right: 20px;
-  margin-left: auto;
-  padding: 8px 16px;
+  padding: 8px 50px 8px 20px;
   background-color: transparent;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: none;
   font-weight: bold;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, font-size 0.2s ease;
+
   z-index: 100;
 }
 
 .home-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  color: gray;
+  font-size: 1.5rem;
 }
 
 .header-controls {
@@ -196,7 +195,6 @@ button:disabled {
   justify-content: flex-end;
   padding-right: 20px; /* Add some padding on the right if needed */
 }
-
 
 
 .display-home-button {
@@ -215,4 +213,31 @@ button:disabled {
   margin: 0 8px;
   display: inline-block;
   vertical-align: middle;
+}
+
+.reorder-controls {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.control-label {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+  color: white;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.move-button {
+  font-size: 1rem;
 }

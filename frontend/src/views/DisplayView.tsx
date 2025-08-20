@@ -203,7 +203,6 @@ const handlePassageHighlight = () => {
   window.getSelection()?.removeAllRanges();
 };
 
-// Fix the renderPassageWithHighlights function to properly handle search terms within highlights
 const renderPassageWithHighlights = () => {
   let passage = currentSection.passage;
 
@@ -377,7 +376,10 @@ const handleNextQuestion = () => {
   return (
     <div>
       <div className="tools-container">
-        {/* Search Bar - only searches in passage */}
+        <div style={{display: 'flex'}}>
+        <div className="display-home-button">
+          <HomeButton setAppState={setAppState} />
+        </div>
         <div className="search-bar">
           <input
             type="text"
@@ -385,6 +387,7 @@ const handleNextQuestion = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
         </div>
 
         {/* Highlighter Tools - only for passage */}
@@ -410,10 +413,6 @@ const handleNextQuestion = () => {
 
           <div className="timer">
             {formatTime(timer)}
-          </div>
-
-          <div className="display-home-button">
-            <HomeButton setAppState={setAppState} />
           </div>
 
         </div>

@@ -150,36 +150,71 @@ export default function QuestionNavigation({
         })}
       </div>
 
-      {isEditView && (
+      {isEditView && test.type === "RC" && (
         <div className="reorder-controls">
-          <button
-            className="question-bubble move-button"
-            onClick={() => handleMoveQuestion(-1)}
-            title="Move question left"
-          >
-            ←
-          </button>
-          <button
-            className="question-bubble move-button"
-            onClick={() => handleMoveQuestion(1)}
-            title="Move question right"
-          >
-            →
-          </button>
-          <button
-            className="question-bubble move-button"
-            onClick={() => handleMoveSection(-1)}
-            title="Move section left"
-          >
-            ⇐
-          </button>
-          <button
-            className="question-bubble move-button"
-            onClick={() => handleMoveSection(1)}
-            title="Move section right"
-          >
-            ⇒
-          </button>
+          <div className="control-group">
+            <span className="control-label">Question order</span>
+            <div className="button-group">
+              <button
+                className="question-bubble move-button"
+                onClick={() => handleMoveQuestion(-1)}
+                title="Move question left"
+              >
+                ←
+              </button>
+              <button
+                className="question-bubble move-button"
+                onClick={() => handleMoveQuestion(1)}
+                title="Move question right"
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          <div className="control-group">
+            <span className="control-label">Section order</span>
+            <div className="button-group">
+              <button
+                className="question-bubble move-button"
+                onClick={() => handleMoveSection(-1)}
+                title="Move section left"
+              >
+                ⇐
+              </button>
+              <button
+                className="question-bubble move-button"
+                onClick={() => handleMoveSection(1)}
+                title="Move section right"
+              >
+                ⇒
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditView && test.type === "LR" && (
+        <div className="reorder-controls">
+          <div className="control-group">
+            <span className="control-label">Question order</span>
+            <div className="button-group">
+              <button
+                className="question-bubble move-button"
+                onClick={() => handleMoveSection(-1)}
+                title="Move question left"
+              >
+                ←
+              </button>
+              <button
+                className="question-bubble move-button"
+                onClick={() => handleMoveSection(1)}
+                title="Move question right"
+              >
+                →
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

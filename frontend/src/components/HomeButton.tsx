@@ -20,7 +20,7 @@ export default function HomeButton({ setAppState }: HomeButtonProps) {
       onClick={handleHomeClick}
       aria-label="Return to home"
     >
-      Home
+      ←
     </button>
   );
 }
