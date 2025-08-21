@@ -1,19 +1,16 @@
-import React from "react";
 import "../styles/DisplayView.css";
 import type { Question } from "../Types.tsx";
 
 type Props = {
   question: Question;
   onSelectChoice: (choiceIndex: number) => void;
-  eliminatedChoices: boolean[];
-  setEliminatedChoices: (newEliminated: boolean[]) => void;
+  onSetEliminated: (newEliminated: boolean[]) => void;
 };
 
 export default function ShowAnswerButton({
   question,
   onSelectChoice,
-  eliminatedChoices,
-  setEliminatedChoices,
+  onSetEliminated,
 }: Props) {
   const handleShowAnswer = () => {
     if (question.correctChoice !== undefined) {
@@ -24,14 +21,14 @@ export default function ShowAnswerButton({
       );
 
       // Set the new eliminated state directly
-      setEliminatedChoices(newEliminated);
+      onSetEliminated(newEliminated);
 
       // Select the correct answer
       onSelectChoice(question.correctChoice);
     } else {
       // If no correct answer defined, eliminate all choices
       const newEliminated = new Array(question.choices.length).fill(true);
-      setEliminatedChoices(newEliminated);
+      onSetEliminated(newEliminated);
     }
   };
 

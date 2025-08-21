@@ -11,6 +11,7 @@ export type Question = {
   selectedChoice?: number;
   correctChoice?: number;
   revealedIncorrectChoice?: number;
+  eliminatedChoices?: boolean[];
 };
 
 export type Section = {

@@ -6,6 +6,7 @@ type Question = {
   choices: string[];
   selectedChoice?: number;
   revealedIncorrectChoice?: number;
+  eliminatedChoices?: boolean[];
 };
 
 type Session = {

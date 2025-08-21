@@ -5,14 +5,12 @@ import "../styles/DisplayView.css";
 type Props = {
   question: QuestionType;
   onSelectChoice?: (choiceIndex: number) => void;
-  eliminatedChoices?: boolean[];
   onToggleEliminated?: (choiceIndex: number) => void;
 };
 
 export default function QuestionDisplay({
   question,
   onSelectChoice,
-  eliminatedChoices = [],
   onToggleEliminated
 }: Props) {
   return (
@@ -22,7 +20,7 @@ export default function QuestionDisplay({
       </div>
       <div className="question-choices">
         {question.choices.map((choice, i) => {
-          const isEliminated = eliminatedChoices[i] || false;
+          const isEliminated = question.eliminatedChoices?.[i] || false;
           const isSelected = question.selectedChoice === i;
           const isIncorrect = question.revealedIncorrectChoice === i;
 

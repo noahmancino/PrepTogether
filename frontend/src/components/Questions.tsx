@@ -8,7 +8,6 @@ type Props = {
   question: QuestionType;
   onUpdate?: (updated: QuestionType) => void;
   onSelectChoice?: (choiceIndex: number) => void;
-  eliminatedChoices?: boolean[];
   onToggleEliminated?: (choiceIndex: number) => void;
 };
 
@@ -17,7 +16,6 @@ export default function Question({
   question,
   onUpdate,
   onSelectChoice,
-  eliminatedChoices,
   onToggleEliminated,
 }: Props) {
   return editable ? (
@@ -29,7 +27,6 @@ export default function Question({
     <QuestionDisplay
       question={question}
       onSelectChoice={onSelectChoice}
-      eliminatedChoices={eliminatedChoices}
       onToggleEliminated={onToggleEliminated}
     />
   );

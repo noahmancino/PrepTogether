@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Question from "../components/Questions.tsx";
 import "../styles/App.css";
 import "../styles/DisplayView.css"
@@ -24,43 +24,31 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
   // Track current question across all sections
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [eliminatedChoices, setEliminatedChoices] = useState<Record<string, boolean[]>>({});
-
-  useEffect(() => {
-    const initialEliminatedChoices: Record<string, boolean[]> = {};
-
-    test.sections.forEach((section, sectionIdx) => {
-      section.questions.forEach((question, questionIdx) => {
-        const questionKey = `${sectionIdx}-${questionIdx}`;
-        initialEliminatedChoices[questionKey] = new Array(question.choices.length).fill(false);
-      });
-    });
-
-    setEliminatedChoices(initialEliminatedChoices);
-  }, []); // Re-initialize when the test changes
-
-  const toggleEliminatedChoice = (sectionIndex: number, questionIndex: number, choiceIndex: number) => {
-    const questionKey = `${sectionIndex}-${questionIndex}`;
-    const currentEliminated = eliminatedChoices[questionKey] || [];
-
-    // Create a new array with the toggled value
+  const toggleEliminatedChoice = (
+    sectionIndex: number,
+    questionIndex: number,
+    choiceIndex: number
+  ) => {
+    const question = test.sections[sectionIndex].questions[questionIndex];
+    const currentEliminated =
+      question.eliminatedChoices ||
+      new Array(question.choices.length).fill(false);
     const newEliminated = [...currentEliminated];
     newEliminated[choiceIndex] = !newEliminated[choiceIndex];
 
-    setEliminatedChoices({
-      ...eliminatedChoices,
-      [questionKey]: newEliminated
+    onUpdate(sectionIndex, questionIndex, {
+      ...question,
+      eliminatedChoices: newEliminated,
     });
   };
 
-const setCurrentQuestionEliminated = (newEliminated: boolean[]) => {
-  const questionKey = `${currentSectionIndex}-${currentQuestionIndex}`;
-
-  setEliminatedChoices({
-    ...eliminatedChoices,
-    [questionKey]: newEliminated
-  });
-};
+  const setCurrentQuestionEliminated = (newEliminated: boolean[]) => {
+    const question = test.sections[currentSectionIndex].questions[currentQuestionIndex];
+    onUpdate(currentSectionIndex, currentQuestionIndex, {
+      ...question,
+      eliminatedChoices: newEliminated,
+    });
+  };
 
 
 
@@ -80,6 +68,34 @@ const setCurrentQuestionEliminated = (newEliminated: boolean[]) => {
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Cleanup state when leaving display view
+  useEffect(() => {
+    return () => {
+      setAppState((prevState: any) => {
+        const activeTest = prevState.tests[test.id];
+        if (!activeTest) return prevState;
+
+        const resetSections = activeTest.sections.map((section: Section) => ({
+          ...section,
+          questions: section.questions.map((q) => ({
+            ...q,
+            selectedChoice: undefined,
+            revealedIncorrectChoice: undefined,
+            eliminatedChoices: undefined,
+          })),
+        }));
+
+        return {
+          ...prevState,
+          tests: {
+            ...prevState.tests,
+            [test.id]: { ...activeTest, sections: resetSections },
+          },
+        };
+      });
+    };
+  }, [setAppState, test.id]);
 
 
   // Timer effect - start when component mounts
@@ -406,26 +422,21 @@ const handleNextQuestion = () => {
 
 const handleUpdateChoice = (choiceIndex: number) => {
   if (!currentQuestion) return;
+  const currentEliminated =
+    currentQuestion.eliminatedChoices ||
+    new Array(currentQuestion.choices.length).fill(false);
 
-  // Get the question key for accessing eliminated choices
-  const questionKey = `${currentSectionIndex}-${currentQuestionIndex}`;
-
-  // If the selected choice was previously eliminated, un-eliminate it
-  if (eliminatedChoices[questionKey] && eliminatedChoices[questionKey][choiceIndex]) {
-    // Create a new array to avoid modifying the original
-    const newEliminated = [...eliminatedChoices[questionKey]];
+  let newEliminated = currentEliminated;
+  if (currentEliminated[choiceIndex]) {
+    newEliminated = [...currentEliminated];
     newEliminated[choiceIndex] = false;
-
-    setEliminatedChoices({
-      ...eliminatedChoices,
-      [questionKey]: newEliminated
-    });
   }
 
   const updatedQuestion = {
     ...currentQuestion,
     selectedChoice: choiceIndex,
-    revealedIncorrectChoice: undefined
+    revealedIncorrectChoice: undefined,
+    eliminatedChoices: newEliminated,
   };
 
   onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
@@ -501,12 +512,7 @@ const handleUpdateChoice = (choiceIndex: number) => {
                     updatedQuestion
                   );
                 }}
-                eliminatedChoices={
-                  eliminatedChoices[
-                    `${currentSectionIndex}-${currentQuestionIndex}`
-                  ] || []
-                }
-                setEliminatedChoices={(newEliminated) =>
+                onSetEliminated={(newEliminated) =>
                   setCurrentQuestionEliminated(newEliminated)
                 }
               />
@@ -529,7 +535,6 @@ const handleUpdateChoice = (choiceIndex: number) => {
             editable={false}
             question={currentQuestion}
             onSelectChoice={handleUpdateChoice}
-            eliminatedChoices={eliminatedChoices[`${currentSectionIndex}-${currentQuestionIndex}`] || []}
             onToggleEliminated={(i: number) => toggleEliminatedChoice(currentSectionIndex, currentQuestionIndex, i)}
           />
         </div>
