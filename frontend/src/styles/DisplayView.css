@@ -150,6 +150,10 @@
   color: #ccc;
 }
 
+.choice-button.incorrect {
+  border-color: #f87171;
+}
+
 
 .eliminate-button {
   background-color: #444;

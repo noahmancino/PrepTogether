@@ -145,6 +145,10 @@ button:disabled {
   border-color: #4ade80;
 }
 
+.question-bubble.incorrect {
+  border-color: #f87171;
+}
+
 .reorder-controls {
   display: flex;
   gap: 0.5rem;

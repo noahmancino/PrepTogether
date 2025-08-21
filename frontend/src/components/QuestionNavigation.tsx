@@ -108,6 +108,10 @@ export default function QuestionNavigation({
                   isActive ? "active" : ""
                 } ${
                   item.question.selectedChoice !== undefined ? "answered" : ""
+                } ${
+                  item.question.revealedIncorrectChoice !== undefined
+                    ? "incorrect"
+                    : ""
                 }`}
                 onClick={() =>
                   onQuestionSelect(item.sectionIndex, item.questionIndex)

@@ -424,7 +424,8 @@ const handleUpdateChoice = (choiceIndex: number) => {
 
   const updatedQuestion = {
     ...currentQuestion,
-    selectedChoice: choiceIndex
+    selectedChoice: choiceIndex,
+    revealedIncorrectChoice: undefined
   };
 
   onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
@@ -476,24 +477,42 @@ const handleUpdateChoice = (choiceIndex: number) => {
           <div className="timer">{formatTime(timer)}</div>
 
           {currentQuestion && (
-            <ShowAnswerButton
-              question={currentQuestion}
-              onSelectChoice={(choiceIndex) => {
-                if (!currentQuestion) return;
+              <ShowAnswerButton
+                question={currentQuestion}
+                onSelectChoice={(choiceIndex) => {
+                  if (!currentQuestion) return;
 
-                const updatedQuestion = {
-                  ...currentQuestion,
-                  selectedChoice: choiceIndex
-                };
+                  const previousSelection = currentQuestion.selectedChoice;
+                  const wasIncorrect =
+                    previousSelection !== undefined &&
+                    previousSelection !== currentQuestion.correctChoice;
 
-                onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
-              }}
-              eliminatedChoices={eliminatedChoices[`${currentSectionIndex}-${currentQuestionIndex}`] || []}
-              setEliminatedChoices={(newEliminated) => setCurrentQuestionEliminated(newEliminated)}
-            />
-          )}
+                  const updatedQuestion = {
+                    ...currentQuestion,
+                    selectedChoice: choiceIndex,
+                    revealedIncorrectChoice: wasIncorrect
+                      ? previousSelection
+                      : currentQuestion.revealedIncorrectChoice,
+                  };
+
+                  onUpdate(
+                    currentSectionIndex,
+                    currentQuestionIndex,
+                    updatedQuestion
+                  );
+                }}
+                eliminatedChoices={
+                  eliminatedChoices[
+                    `${currentSectionIndex}-${currentQuestionIndex}`
+                  ] || []
+                }
+                setEliminatedChoices={(newEliminated) =>
+                  setCurrentQuestionEliminated(newEliminated)
+                }
+              />
+            )}
+          </div>
         </div>
-      </div>
 
       <div className="main-layout">
         <div className="passage-column">

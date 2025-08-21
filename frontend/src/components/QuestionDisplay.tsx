@@ -24,11 +24,12 @@ export default function QuestionDisplay({
         {question.choices.map((choice, i) => {
           const isEliminated = eliminatedChoices[i] || false;
           const isSelected = question.selectedChoice === i;
+          const isIncorrect = question.revealedIncorrectChoice === i;
 
           return (
             <div key={i} className="choice-container">
               <button
-                className={`choice-button${isSelected ? " selected" : ""}${isEliminated ? " eliminated" : ""}`}
+                className={`choice-button${isSelected ? " selected" : ""}${isEliminated ? " eliminated" : ""}${isIncorrect ? " incorrect" : ""}`}
                 onClick={() => onSelectChoice?.(i)}
                 disabled={!onSelectChoice}
               >

@@ -10,6 +10,7 @@ export type Question = {
   choices: string[];
   selectedChoice?: number;
   correctChoice?: number;
+  revealedIncorrectChoice?: number;
 };
 
 export type Section = {

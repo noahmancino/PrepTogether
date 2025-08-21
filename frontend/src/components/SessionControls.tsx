@@ -5,6 +5,7 @@ type Question = {
   stem: string;
   choices: string[];
   selectedChoice?: number;
+  revealedIncorrectChoice?: number;
 };
 
 type Session = {
