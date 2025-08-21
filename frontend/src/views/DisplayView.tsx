@@ -69,6 +69,10 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
 
+    // Submission overlay state
+  const [showResults, setShowResults] = useState(false);
+  const [score, setScore] = useState({ correct: 0, total: 0 });
+
   // Cleanup state when leaving display view
   useEffect(() => {
     return () => {
@@ -114,15 +118,14 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
     return `${minutes}:${seconds}`;
   };
 
-// Updated state to track highlighted ranges more efficiently
-const [passageHighlights, setPassageHighlights] = useState<{
-  id: string;
-  startIndex: number;
-  endIndex: number;
-  type: 'yellow';
-}[]>([]);
+  // Updated state to track highlighted ranges more efficiently
+    const [passageHighlights, setPassageHighlights] = useState<{
+      id: string;
+      startIndex: number;
+      endIndex: number;
+      type: 'yellow';
+    }[]>([]);
 
-  // TODO: fix bug where partially highlighted words don't get a search highlight
   const handlePassageHighlight = () => {
     if (activeHighlighter === "none") return;
 
@@ -418,8 +421,6 @@ const handleNextQuestion = () => {
   }
 };
 
-
-
 const handleUpdateChoice = (choiceIndex: number) => {
   if (!currentQuestion) return;
   const currentEliminated =
@@ -442,6 +443,39 @@ const handleUpdateChoice = (choiceIndex: number) => {
   onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
 };
 
+  const handleSubmitTest = () => {
+    let correct = 0;
+    let total = 0;
+
+    test.sections.forEach((section, sectionIndex) => {
+      section.questions.forEach((question, questionIndex) => {
+        total += 1;
+        const isCorrect = question.selectedChoice === question.correctChoice && question.correctChoice !== undefined;
+        if (isCorrect) correct += 1;
+
+        let newEliminated: boolean[];
+        if (question.correctChoice !== undefined) {
+          newEliminated = question.choices.map((_, i) => i !== question.correctChoice);
+        } else {
+          newEliminated = new Array(question.choices.length).fill(true);
+        }
+
+        const updatedQuestion = {
+          ...question,
+          eliminatedChoices: newEliminated,
+          revealedIncorrectChoice:
+            question.selectedChoice !== undefined && !isCorrect
+              ? question.selectedChoice
+              : question.revealedIncorrectChoice,
+        };
+
+        onUpdate(sectionIndex, questionIndex, updatedQuestion);
+      });
+    });
+
+    setScore({ correct, total });
+    setShowResults(true);
+  };
 
   return (
     <div>
@@ -460,7 +494,6 @@ const handleUpdateChoice = (choiceIndex: number) => {
         </div>
         </div>
 
-        {/* Highlighter Tools - only for passage */}
         <div className="highlight-tools">
           <button
             className={`highlight-btn yellow ${activeHighlighter === 'yellow' ? 'active' : ''}`}
@@ -479,15 +512,11 @@ const handleUpdateChoice = (choiceIndex: number) => {
           </button>
         </div>
 
-
-
-
-
-
         <div className="timer-controls">
           <div className="timer">{formatTime(timer)}</div>
 
           {currentQuestion && (
+              <>
               <ShowAnswerButton
                 question={currentQuestion}
                 onSelectChoice={(choiceIndex) => {
@@ -516,7 +545,12 @@ const handleUpdateChoice = (choiceIndex: number) => {
                   setCurrentQuestionEliminated(newEliminated)
                 }
               />
+              <button onClick={handleSubmitTest}>
+                Submit Test
+              </button>
+              </>
             )}
+
           </div>
         </div>
 
@@ -560,13 +594,27 @@ const handleUpdateChoice = (choiceIndex: number) => {
         </button>
         <button
           onClick={handleNextQuestion}
-          /* TODO: potential danger in case of empty sections */
           disabled={currentSectionIndex === safeSections.length - 1 && currentQuestionIndex === currentSection.questions.length - 1}
         >
           Next
           <span className="arrow-icon">→</span>
         </button>
       </div>
+
+      {showResults && (
+        <div className="results-overlay">
+          <div className="display-home-button">
+            <HomeButton setAppState={setAppState} />
+          </div>
+          <div className="score-text">{`${score.correct}/${score.total}`}</div>
+          <button
+            className="show-answer-button"
+            onClick={() => setShowResults(false)}
+          >
+            Back to Test
+          </button>
+        </div>
+      )}
 
     </div>
   );
