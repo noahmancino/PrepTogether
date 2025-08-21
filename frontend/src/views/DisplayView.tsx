@@ -95,7 +95,7 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
         };
       });
     };
-  }, [setAppState, test.id]);
+  }, []);
 
 
   // Timer effect - start when component mounts
