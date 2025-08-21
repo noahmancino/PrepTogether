@@ -5,6 +5,7 @@ import "../styles/DisplayView.css"
 import HomeButton from "../components/HomeButton.tsx";
 import type {Test, Section} from "../Types.tsx";
 import QuestionNavigation from "../components/QuestionNavigation.tsx";
+import ShowAnswerButton from "../components/ShowAnswerButton.tsx";
 
 type HighlightType = "yellow" | "eraser" | "none";
 
@@ -21,8 +22,47 @@ type Props = {
 
 export default function DisplayView({ test, onUpdate, setAppState }: Props) {
   // Track current question across all sections
-    const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [eliminatedChoices, setEliminatedChoices] = useState<Record<string, boolean[]>>({});
+
+  useEffect(() => {
+    const initialEliminatedChoices: Record<string, boolean[]> = {};
+
+    test.sections.forEach((section, sectionIdx) => {
+      section.questions.forEach((question, questionIdx) => {
+        const questionKey = `${sectionIdx}-${questionIdx}`;
+        initialEliminatedChoices[questionKey] = new Array(question.choices.length).fill(false);
+      });
+    });
+
+    setEliminatedChoices(initialEliminatedChoices);
+  }, []); // Re-initialize when the test changes
+
+  const toggleEliminatedChoice = (sectionIndex: number, questionIndex: number, choiceIndex: number) => {
+    const questionKey = `${sectionIndex}-${questionIndex}`;
+    const currentEliminated = eliminatedChoices[questionKey] || [];
+
+    // Create a new array with the toggled value
+    const newEliminated = [...currentEliminated];
+    newEliminated[choiceIndex] = !newEliminated[choiceIndex];
+
+    setEliminatedChoices({
+      ...eliminatedChoices,
+      [questionKey]: newEliminated
+    });
+  };
+
+const setCurrentQuestionEliminated = (newEliminated: boolean[]) => {
+  const questionKey = `${currentSectionIndex}-${currentQuestionIndex}`;
+
+  setEliminatedChoices({
+    ...eliminatedChoices,
+    [questionKey]: newEliminated
+  });
+};
+
+
 
   const safeSections = test.sections || [];
   const currentSection = safeSections[currentSectionIndex] || { passage: "", questions: [] };
@@ -66,270 +106,270 @@ const [passageHighlights, setPassageHighlights] = useState<{
   type: 'yellow';
 }[]>([]);
 
-// TODO: fix bug where partially highlighted words don't get a search highlight
-const handlePassageHighlight = () => {
-  if (activeHighlighter === "none") return;
+  // TODO: fix bug where partially highlighted words don't get a search highlight
+  const handlePassageHighlight = () => {
+    if (activeHighlighter === "none") return;
 
-  const selection = window.getSelection();
-  if (!selection || selection.isCollapsed) return;
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
 
-  const selectionText = selection.toString().trim();
-  if (!selectionText) return;
+    const selectionText = selection.toString().trim();
+    if (!selectionText) return;
 
-  // Get the original passage text
-  const passageText = currentSection.passage;
+    // Get the original passage text
+    const passageText = currentSection.passage;
 
-  // Find the selected text in the passage
-  let selStartOffset = passageText.indexOf(selectionText);
-  let selEndOffset = selStartOffset + selectionText.length;
+    // Find the selected text in the passage
+    let selStartOffset = passageText.indexOf(selectionText);
+    let selEndOffset = selStartOffset + selectionText.length;
 
-  // If we can't find the exact text, return without highlighting
-  if (selStartOffset === -1) {
-    console.warn("Could not find selected text in passage");
-    return;
-  }
-
-  if (activeHighlighter === "eraser") {
-    // Process each highlight that overlaps with the selection
-    setPassageHighlights(prevHighlights => {
-      const newHighlights = [];
-
-      for (const highlight of prevHighlights) {
-        // Case 1: No overlap - keep the highlight unchanged
-        if (highlight.endIndex <= selStartOffset || highlight.startIndex >= selEndOffset) {
-          newHighlights.push(highlight);
-          continue;
-        }
-
-        // Case 2: Selection completely covers the highlight - remove it entirely
-        if (selStartOffset <= highlight.startIndex && selEndOffset >= highlight.endIndex) {
-          // Skip this highlight (don't add to newHighlights)
-          continue;
-        }
-
-        // Case 3: Selection cuts through the middle of the highlight - split it
-        if (selStartOffset > highlight.startIndex && selEndOffset < highlight.endIndex) {
-          // Create first segment (before the erased part)
-          newHighlights.push({
-            id: `highlight-${Date.now()}-1`,
-            startIndex: highlight.startIndex,
-            endIndex: selStartOffset,
-            type: 'yellow'
-          });
-
-          // Create second segment (after the erased part)
-          newHighlights.push({
-            id: `highlight-${Date.now()}-2`,
-            startIndex: selEndOffset,
-            endIndex: highlight.endIndex,
-            type: 'yellow'
-          });
-
-          continue;
-        }
-
-        // Case 4: Selection overlaps with the start of the highlight
-        if (selEndOffset < highlight.endIndex) {
-          newHighlights.push({
-            id: `highlight-${Date.now()}`,
-            startIndex: selEndOffset,
-            endIndex: highlight.endIndex,
-            type: 'yellow'
-          });
-          continue;
-        }
-
-        // Case 5: Selection overlaps with the end of the highlight
-        if (selStartOffset > highlight.startIndex) {
-          newHighlights.push({
-            id: `highlight-${Date.now()}`,
-            startIndex: highlight.startIndex,
-            endIndex: selStartOffset,
-            type: 'yellow'
-          });
-        }
-      }
-
-      return newHighlights;
-    });
-  } else if (activeHighlighter === "yellow") {
-    // Check for overlapping highlights first
-    const overlappingHighlights = passageHighlights.filter(h =>
-      (h.startIndex < selEndOffset && h.endIndex > selStartOffset)
-    );
-
-    if (overlappingHighlights.length > 0) {
-      // If there are overlapping highlights, merge them
-      const minStart = Math.min(
-        selStartOffset,
-        ...overlappingHighlights.map(h => h.startIndex)
-      );
-
-      const maxEnd = Math.max(
-        selEndOffset,
-        ...overlappingHighlights.map(h => h.endIndex)
-      );
-
-      // Remove the overlapping highlights
-      const nonOverlapping = passageHighlights.filter(h =>
-        !(h.startIndex < selEndOffset && h.endIndex > selStartOffset)
-      );
-
-      // Add the merged highlight
-      setPassageHighlights([
-        ...nonOverlapping,
-        {
-          id: `highlight-${Date.now()}`,
-          startIndex: minStart,
-          endIndex: maxEnd,
-          type: 'yellow'
-        }
-      ]);
-    } else {
-      // No overlaps, just add the new highlight
-      setPassageHighlights([
-        ...passageHighlights,
-        {
-          id: `highlight-${Date.now()}`,
-          startIndex: selStartOffset,
-          endIndex: selEndOffset,
-          type: 'yellow'
-        }
-      ]);
+    // If we can't find the exact text, return without highlighting
+    if (selStartOffset === -1) {
+      console.warn("Could not find selected text in passage");
+      return;
     }
-  }
 
-  // Clear the selection
-  window.getSelection()?.removeAllRanges();
-};
+    if (activeHighlighter === "eraser") {
+      // Process each highlight that overlaps with the selection
+      setPassageHighlights(prevHighlights => {
+        const newHighlights = [];
 
-const renderPassageWithHighlights = () => {
-  let passage = currentSection.passage;
+        for (const highlight of prevHighlights) {
+          // Case 1: No overlap - keep the highlight unchanged
+          if (highlight.endIndex <= selStartOffset || highlight.startIndex >= selEndOffset) {
+            newHighlights.push(highlight);
+            continue;
+          }
 
-  // Create an array to track highlighting for each character position
-  const highlightMap = new Array(passage.length).fill(null);
+          // Case 2: Selection completely covers the highlight - remove it entirely
+          if (selStartOffset <= highlight.startIndex && selEndOffset >= highlight.endIndex) {
+            // Skip this highlight (don't add to newHighlights)
+            continue;
+          }
 
-  // Apply manual highlights first
-  passageHighlights.forEach(highlight => {
-    for (let i = highlight.startIndex; i < highlight.endIndex; i++) {
-      if (i >= 0 && i < highlightMap.length) {
-        highlightMap[i] = highlight.type;
+          // Case 3: Selection cuts through the middle of the highlight - split it
+          if (selStartOffset > highlight.startIndex && selEndOffset < highlight.endIndex) {
+            // Create first segment (before the erased part)
+            newHighlights.push({
+              id: `highlight-${Date.now()}-1`,
+              startIndex: highlight.startIndex,
+              endIndex: selStartOffset,
+              type: 'yellow'
+            });
+
+            // Create second segment (after the erased part)
+            newHighlights.push({
+              id: `highlight-${Date.now()}-2`,
+              startIndex: selEndOffset,
+              endIndex: highlight.endIndex,
+              type: 'yellow'
+            });
+
+            continue;
+          }
+
+          // Case 4: Selection overlaps with the start of the highlight
+          if (selEndOffset < highlight.endIndex) {
+            newHighlights.push({
+              id: `highlight-${Date.now()}`,
+              startIndex: selEndOffset,
+              endIndex: highlight.endIndex,
+              type: 'yellow'
+            });
+            continue;
+          }
+
+          // Case 5: Selection overlaps with the end of the highlight
+          if (selStartOffset > highlight.startIndex) {
+            newHighlights.push({
+              id: `highlight-${Date.now()}`,
+              startIndex: highlight.startIndex,
+              endIndex: selStartOffset,
+              type: 'yellow'
+            });
+          }
+        }
+
+        return newHighlights;
+      });
+    } else if (activeHighlighter === "yellow") {
+      // Check for overlapping highlights first
+      const overlappingHighlights = passageHighlights.filter(h =>
+        (h.startIndex < selEndOffset && h.endIndex > selStartOffset)
+      );
+
+      if (overlappingHighlights.length > 0) {
+        // If there are overlapping highlights, merge them
+        const minStart = Math.min(
+          selStartOffset,
+          ...overlappingHighlights.map(h => h.startIndex)
+        );
+
+        const maxEnd = Math.max(
+          selEndOffset,
+          ...overlappingHighlights.map(h => h.endIndex)
+        );
+
+        // Remove the overlapping highlights
+        const nonOverlapping = passageHighlights.filter(h =>
+          !(h.startIndex < selEndOffset && h.endIndex > selStartOffset)
+        );
+
+        // Add the merged highlight
+        setPassageHighlights([
+          ...nonOverlapping,
+          {
+            id: `highlight-${Date.now()}`,
+            startIndex: minStart,
+            endIndex: maxEnd,
+            type: 'yellow'
+          }
+        ]);
+      } else {
+        // No overlaps, just add the new highlight
+        setPassageHighlights([
+          ...passageHighlights,
+          {
+            id: `highlight-${Date.now()}`,
+            startIndex: selStartOffset,
+            endIndex: selEndOffset,
+            type: 'yellow'
+          }
+        ]);
       }
     }
-  });
 
-  // Process the passage with highlighting information
-  let result = '';
-  let currentType = null;
-  let spanOpen = false;
-
-  // Helper to close any open span
-  const closeSpan = () => {
-    if (spanOpen) {
-      result += '</span>';
-      spanOpen = false;
-    }
+    // Clear the selection
+    window.getSelection()?.removeAllRanges();
   };
 
-  // First pass: Apply manual highlights
-  for (let i = 0; i < passage.length; i++) {
-    const highlightType = highlightMap[i];
+  const renderPassageWithHighlights = () => {
+    let passage = currentSection.passage;
 
-    // If highlight type changes, close previous span and open new one
-    if (highlightType !== currentType) {
-      closeSpan();
+    // Create an array to track highlighting for each character position
+    const highlightMap = new Array(passage.length).fill(null);
 
-      if (highlightType) {
-        result += `<span class="${highlightType}-highlight">`;
-        spanOpen = true;
-      }
-
-      currentType = highlightType;
-    }
-
-    // Add the character
-    result += passage[i];
-  }
-
-  // Close any open span at the end
-  closeSpan();
-
-  // Second pass: Apply search highlighting (higher priority)
-  if (searchTerm && searchTerm.length >= 3) {
-    try {
-      const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const searchRegex = new RegExp(`(${escapedSearchTerm})`, 'gi');
-
-      // Modified approach to ensure search highlights appear regardless of underlying highlights
-      const processedResult = [];
-
-      // Extract parts between spans and inside spans separately
-      let lastIndex = 0;
-      let insideSpan = false;
-      let spanContent = '';
-      let spanClass = '';
-
-      // Helper function to apply search highlighting to a text segment
-      const highlightSearchTerms = (text) => {
-        return text.replace(searchRegex, match =>
-          `<span class="search-highlight">${match}</span>`
-        );
-      };
-
-      // Process the HTML string
-      for (let i = 0; i < result.length; i++) {
-        if (result.substring(i, i + 6) === '<span ') {
-          // Found start of a span
-          if (!insideSpan) {
-            // Process text before span
-            const textBeforeSpan = result.substring(lastIndex, i);
-            processedResult.push(highlightSearchTerms(textBeforeSpan));
-
-            // Extract span class
-            const classMatch = result.substring(i).match(/class="([^"]+)"/);
-            if (classMatch) {
-              spanClass = classMatch[1];
-            }
-
-            insideSpan = true;
-            spanContent = '';
-
-            // Find the end of the span opening tag
-            const spanTagEnd = result.indexOf('>', i);
-            if (spanTagEnd !== -1) {
-              processedResult.push(result.substring(i, spanTagEnd + 1));
-              lastIndex = spanTagEnd + 1;
-              i = spanTagEnd;
-            }
-          }
-        } else if (result.substring(i, i + 7) === '</span>') {
-          // Found end of a span
-          if (insideSpan) {
-            // Process the content inside the span
-            const spanText = result.substring(lastIndex, i);
-            processedResult.push(highlightSearchTerms(spanText));
-            processedResult.push('</span>');
-
-            insideSpan = false;
-            lastIndex = i + 7;
-            i = lastIndex - 1;
-          }
+    // Apply manual highlights first
+    passageHighlights.forEach(highlight => {
+      for (let i = highlight.startIndex; i < highlight.endIndex; i++) {
+        if (i >= 0 && i < highlightMap.length) {
+          highlightMap[i] = highlight.type;
         }
       }
+    });
 
-      // Process any remaining text
-      if (lastIndex < result.length) {
-        processedResult.push(highlightSearchTerms(result.substring(lastIndex)));
+    // Process the passage with highlighting information
+    let result = '';
+    let currentType = null;
+    let spanOpen = false;
+
+    // Helper to close any open span
+    const closeSpan = () => {
+      if (spanOpen) {
+        result += '</span>';
+        spanOpen = false;
+      }
+    };
+
+    // First pass: Apply manual highlights
+    for (let i = 0; i < passage.length; i++) {
+      const highlightType = highlightMap[i];
+
+      // If highlight type changes, close previous span and open new one
+      if (highlightType !== currentType) {
+        closeSpan();
+
+        if (highlightType) {
+          result += `<span class="${highlightType}-highlight">`;
+          spanOpen = true;
+        }
+
+        currentType = highlightType;
       }
 
-      result = processedResult.join('');
-    } catch (e) {
-      console.error("Search regex error:", e);
+      // Add the character
+      result += passage[i];
     }
-  }
 
-  return { __html: result };
-};
+    // Close any open span at the end
+    closeSpan();
+
+    // Second pass: Apply search highlighting (higher priority)
+    if (searchTerm && searchTerm.length >= 3) {
+      try {
+        const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchRegex = new RegExp(`(${escapedSearchTerm})`, 'gi');
+
+        // Modified approach to ensure search highlights appear regardless of underlying highlights
+        const processedResult = [];
+
+        // Extract parts between spans and inside spans separately
+        let lastIndex = 0;
+        let insideSpan = false;
+        let spanContent = '';
+        let spanClass = '';
+
+        // Helper function to apply search highlighting to a text segment
+        const highlightSearchTerms = (text) => {
+          return text.replace(searchRegex, match =>
+            `<span class="search-highlight">${match}</span>`
+          );
+        };
+
+        // Process the HTML string
+        for (let i = 0; i < result.length; i++) {
+          if (result.substring(i, i + 6) === '<span ') {
+            // Found start of a span
+            if (!insideSpan) {
+              // Process text before span
+              const textBeforeSpan = result.substring(lastIndex, i);
+              processedResult.push(highlightSearchTerms(textBeforeSpan));
+
+              // Extract span class
+              const classMatch = result.substring(i).match(/class="([^"]+)"/);
+              if (classMatch) {
+                spanClass = classMatch[1];
+              }
+
+              insideSpan = true;
+              spanContent = '';
+
+              // Find the end of the span opening tag
+              const spanTagEnd = result.indexOf('>', i);
+              if (spanTagEnd !== -1) {
+                processedResult.push(result.substring(i, spanTagEnd + 1));
+                lastIndex = spanTagEnd + 1;
+                i = spanTagEnd;
+              }
+            }
+          } else if (result.substring(i, i + 7) === '</span>') {
+            // Found end of a span
+            if (insideSpan) {
+              // Process the content inside the span
+              const spanText = result.substring(lastIndex, i);
+              processedResult.push(highlightSearchTerms(spanText));
+              processedResult.push('</span>');
+
+              insideSpan = false;
+              lastIndex = i + 7;
+              i = lastIndex - 1;
+            }
+          }
+        }
+
+        // Process any remaining text
+        if (lastIndex < result.length) {
+          processedResult.push(highlightSearchTerms(result.substring(lastIndex)));
+        }
+
+        result = processedResult.join('');
+      } catch (e) {
+        console.error("Search regex error:", e);
+      }
+    }
+
+    return { __html: result };
+  };
 
 
 const handlePrevQuestion = () => {
@@ -339,6 +379,7 @@ const handlePrevQuestion = () => {
   if (currentQuestionIndex > 0) {
     setCurrentQuestionIndex(currentQuestionIndex - 1);
   } else {
+    const currentSection = safeSections[currentSectionIndex - 1] || { questions: [] };
     setCurrentSectionIndex(currentSectionIndex - 1);
     setCurrentQuestionIndex(currentSection.questions.length - 1);
   }
@@ -363,15 +404,32 @@ const handleNextQuestion = () => {
 
 
 
-  // Handle updating the question when a choice is selected
-  const handleUpdateChoice = (choiceIndex: number) => {
-    const updatedQuestion = { ...currentQuestion, selectedChoice: choiceIndex };
-    onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
+const handleUpdateChoice = (choiceIndex: number) => {
+  if (!currentQuestion) return;
+
+  // Get the question key for accessing eliminated choices
+  const questionKey = `${currentSectionIndex}-${currentQuestionIndex}`;
+
+  // If the selected choice was previously eliminated, un-eliminate it
+  if (eliminatedChoices[questionKey] && eliminatedChoices[questionKey][choiceIndex]) {
+    // Create a new array to avoid modifying the original
+    const newEliminated = [...eliminatedChoices[questionKey]];
+    newEliminated[choiceIndex] = false;
+
+    setEliminatedChoices({
+      ...eliminatedChoices,
+      [questionKey]: newEliminated
+    });
+  }
+
+  const updatedQuestion = {
+    ...currentQuestion,
+    selectedChoice: choiceIndex
   };
 
-  if (safeSections.length === 0) {
-    return <div className="error-message">No sections available.</div>;
-  }
+  onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
+};
+
 
   return (
     <div>
@@ -409,17 +467,35 @@ const handleNextQuestion = () => {
           </button>
         </div>
 
-        <div className="header-controls">
 
-          <div className="timer">
-            {formatTime(timer)}
-          </div>
 
+
+
+
+        <div className="timer-controls">
+          <div className="timer">{formatTime(timer)}</div>
+
+          {currentQuestion && (
+            <ShowAnswerButton
+              question={currentQuestion}
+              onSelectChoice={(choiceIndex) => {
+                if (!currentQuestion) return;
+
+                const updatedQuestion = {
+                  ...currentQuestion,
+                  selectedChoice: choiceIndex
+                };
+
+                onUpdate(currentSectionIndex, currentQuestionIndex, updatedQuestion);
+              }}
+              eliminatedChoices={eliminatedChoices[`${currentSectionIndex}-${currentQuestionIndex}`] || []}
+              setEliminatedChoices={(newEliminated) => setCurrentQuestionEliminated(newEliminated)}
+            />
+          )}
         </div>
       </div>
 
       <div className="main-layout">
-        {/* Passage Section with highlighting capabilities */}
         <div className="passage-column">
           <div
             className="passage-box"
@@ -429,12 +505,13 @@ const handleNextQuestion = () => {
           </div>
         </div>
 
-        {/* Questions Section - completely unchanged */}
         <div className="question-column">
           <Question
             editable={false}
             question={currentQuestion}
             onSelectChoice={handleUpdateChoice}
+            eliminatedChoices={eliminatedChoices[`${currentSectionIndex}-${currentQuestionIndex}`] || []}
+            onToggleEliminated={(i: number) => toggleEliminatedChoice(currentSectionIndex, currentQuestionIndex, i)}
           />
         </div>
       </div>
