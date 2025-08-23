@@ -21,10 +21,14 @@ export type Section = {
 
 export type CollaborativeSession = {
   sessionId: string;
+  /** Token returned from backend for websocket authentication */
+  token: string;
   role: "tutor" | "student";
   connectedUsers: string[];
   lastSynced: number;
   sharedTestId: string;
+  /** Optional state used when the user is not the host */
+  sessionState?: any;
 };
 
 export type Test = {

@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Question from "../components/Questions.tsx";
 import "../styles/App.css";
 import "../styles/DisplayView.css"
 import HomeButton from "../components/HomeButton.tsx";
-import type {Test, Section} from "../Types.tsx";
+import type {Test, Section, CollaborativeSession} from "../Types.tsx";
 import QuestionNavigation from "../components/QuestionNavigation.tsx";
 import ShowAnswerButton from "../components/ShowAnswerButton.tsx";
+import { connectSession, SessionConnection } from "../session/client";
 
 type HighlightType = "yellow" | "eraser" | "none";
 
 type Props = {
   test: Test;
+  sessionInfo: CollaborativeSession | null;
   onUpdate: (
     sectionIndex: number,
     questionIndex: number,
@@ -20,7 +22,7 @@ type Props = {
 
 };
 
-export default function DisplayView({ test, onUpdate, setAppState }: Props) {
+export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }: Props) {
   // Track current question across all sections
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -99,14 +101,27 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
   }, []);
 
 
-  // Timer effect - start when component mounts
+  // Timer effect - host controls timer and broadcasts updates
   useEffect(() => {
+    if (sessionInfo) {
+      if (sessionInfo.role === 'tutor') {
+        const timerInterval = setInterval(() => {
+          setTimer((prev) => {
+            const next = prev + 1;
+            sessionRef.current?.send({ type: 'timer', remaining: next });
+            return next;
+          });
+        }, 1000);
+        return () => clearInterval(timerInterval);
+      }
+      // participants rely on host updates
+      return;
+    }
     const timerInterval = setInterval(() => {
-      setTimer(prevTimer => prevTimer + 1);
+      setTimer((prevTimer) => prevTimer + 1);
     }, 1000);
-
     return () => clearInterval(timerInterval);
-  }, []);
+  }, [sessionInfo]);
 
   // Format timer as MM:SS
   const formatTime = (timeInSeconds: number) => {
@@ -116,12 +131,30 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
   };
 
   // Updated state to track highlighted ranges more efficiently
-    const [passageHighlights, setPassageHighlights] = useState<{
-      id: string;
-      startIndex: number;
-      endIndex: number;
-      type: 'yellow';
-    }[]>([]);
+  const [passageHighlights, setPassageHighlights] = useState<{
+    id: string;
+    startIndex: number;
+    endIndex: number;
+    type: 'yellow';
+  }[]>([]);
+
+  const sessionRef = useRef<SessionConnection | null>(null);
+
+  // establish websocket connection when participating in a session
+  useEffect(() => {
+    if (!sessionInfo) return;
+    const conn = connectSession(sessionInfo.sessionId, sessionInfo.token, (event) => {
+      if (event.type === 'timer') {
+        setTimer(event.remaining);
+      } else if (event.type === 'highlight') {
+        setPassageHighlights((prev) => [...prev, event.highlight]);
+      } else if (event.type === 'search') {
+        setSearchTerm(event.term);
+      }
+    });
+    sessionRef.current = conn;
+    return () => conn.close();
+  }, [sessionInfo]);
 
   const handlePassageHighlight = () => {
     if (activeHighlighter === "none") return;
@@ -233,26 +266,30 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
         );
 
         // Add the merged highlight
+        const merged = {
+          id: `highlight-${Date.now()}`,
+          startIndex: minStart,
+          endIndex: maxEnd,
+          type: 'yellow'
+        };
         setPassageHighlights([
           ...nonOverlapping,
-          {
-            id: `highlight-${Date.now()}`,
-            startIndex: minStart,
-            endIndex: maxEnd,
-            type: 'yellow'
-          }
+          merged
         ]);
+        sessionRef.current?.send({ type: 'highlight', highlight: merged });
       } else {
         // No overlaps, just add the new highlight
+        const newHighlight = {
+          id: `highlight-${Date.now()}`,
+          startIndex: selStartOffset,
+          endIndex: selEndOffset,
+          type: 'yellow'
+        };
         setPassageHighlights([
           ...passageHighlights,
-          {
-            id: `highlight-${Date.now()}`,
-            startIndex: selStartOffset,
-            endIndex: selEndOffset,
-            type: 'yellow'
-          }
+          newHighlight
         ]);
+        sessionRef.current?.send({ type: 'highlight', highlight: newHighlight });
       }
     }
 
@@ -489,7 +526,11 @@ const handleUpdateChoice = (choiceIndex: number) => {
             type="text"
             placeholder="Search in passage..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchTerm(val);
+              sessionRef.current?.send({ type: 'search', term: val });
+            }}
           />
         </div>
         </div>
