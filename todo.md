@@ -9,10 +9,10 @@ update, at times components have functions with nearly identical names/purposes 
 consistency in approach would probably be better.
 
 # Features
-- Highlighting is janky and may need a whole new approach
 - Way to clear tests of selected answers without submitting test
+- Are you sure? pop up For delete functionality. 
+- In display view, make long answer choices collapsable. 
 
 
 # Bugs
-- Question nav indicates whether question is answered in edit view
-- Question nav back button breaks in display view
+- Highlighting. Selecting the correct can be frustrating, and the eraser tool can behave strangely

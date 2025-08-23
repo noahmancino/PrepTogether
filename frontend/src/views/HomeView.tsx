@@ -223,10 +223,6 @@ export default function HomeView({ appState, setAppState }: Props) {
     <div className="home-view">
       <h1>Welcome to the Test Manager</h1>
       <div className="actions">
-        {/* Create New Test Button - now toggles the creation form */}
-        <button className="create-test-btn" onClick={toggleTestCreation}>
-          Create New Test
-        </button>
 
         <button className="upload-test-btn" onClick={handleUploadClick}>
           Upload Tests
@@ -245,13 +241,16 @@ export default function HomeView({ appState, setAppState }: Props) {
           Join Session
         </button>
 
-        {/* Toggle Dropdown Button (appears as "+") */}
+        <button className="create-test-btn" onClick={toggleTestCreation}>
+          Create New Test
+        </button>
+
         <button
           className="toggle-dropdown-btn"
           onClick={toggleMainDropdown}
           aria-label="Toggle Dropdown"
         >
-          {mainDropdownOpen ? "-" : "+"} {/* Symbol toggles between + and - */}
+          {mainDropdownOpen ? "-" : "+"}
         </button>
       </div>
 
