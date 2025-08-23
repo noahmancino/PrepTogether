@@ -1,5 +1,5 @@
 import type { AppState, Test } from "../Types.tsx";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import "../styles/App.css";
 import "../styles/HomeView.css";
 
@@ -14,6 +14,7 @@ export default function HomeView({ appState, setAppState }: Props) {
   const [testCreationOpen, setTestCreationOpen] = useState(false);
   const [newTestName, setNewTestName] = useState("");
   const [newTestType, setNewTestType] = useState<"RC" | "LR">("RC");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const toggleTestCreation = () => {
     setMainDropdownOpen(false);
@@ -102,6 +103,82 @@ export default function HomeView({ appState, setAppState }: Props) {
     }
   };
 
+  // Downloads a test as a JSON file
+  const downloadTest = (testId: string) => {
+    const test = appState.tests[testId];
+    const exportTest = {
+      id: test.id,
+      name: test.name,
+      type: test.type,
+      sections: test.sections.map((section) => ({
+        passage: section.passage,
+        questions: section.questions.map((q) => ({
+          stem: q.stem,
+          choices: q.choices,
+          correctChoice: q.correctChoice,
+        })),
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(exportTest, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${test.name.replace(/\s+/g, "_")}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        const testsArray: Test[] = Array.isArray(parsed) ? parsed : [parsed];
+        const newTests: Record<string, Test> = {};
+        testsArray.forEach((t) => {
+          let id = t.id || String(Date.now() + Math.random());
+          if (appState.tests[id]) {
+            id = `${id}-${Date.now()}`;
+          }
+          newTests[id] = {
+            id,
+            name: t.name || "Untitled",
+            type: t.type,
+            sections: (t.sections || []).map((section) => ({
+              passage: section.passage || "",
+              questions: (section.questions || []).map((q) => ({
+                stem: q.stem || "",
+                choices: q.choices || [],
+                correctChoice: q.correctChoice,
+              })),
+            })),
+          };
+        });
+        setAppState({
+          ...appState,
+          tests: { ...appState.tests, ...newTests },
+        });
+      } catch (err) {
+        console.error("Failed to upload tests", err);
+      }
+    };
+    reader.readAsText(file);
+    // Reset the input so the same file can be uploaded again if needed
+    e.target.value = "";
+  };
+
   return (
     <div className="home-view">
       <h1>Welcome to the Test Manager</h1>
@@ -109,6 +186,10 @@ export default function HomeView({ appState, setAppState }: Props) {
         {/* Create New Test Button - now toggles the creation form */}
         <button className="create-test-btn" onClick={toggleTestCreation}>
           Create New Test
+        </button>
+
+        <button className="upload-test-btn" onClick={handleUploadClick}>
+          Upload Tests
         </button>
 
         {/* Toggle Dropdown Button (appears as "+") */}
@@ -194,6 +275,12 @@ export default function HomeView({ appState, setAppState }: Props) {
               </div>
               <div
                 className="test-option"
+                onClick={() => downloadTest(test.id)}
+              >
+                Download Test
+              </div>
+              <div
+                className="test-option"
                 onClick={() => deleteTest(test.id)}
               >
                 Delete Test
@@ -202,6 +289,13 @@ export default function HomeView({ appState, setAppState }: Props) {
           </div>
         ))}
       </div>
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        accept="application/json,text/plain"
+        onChange={handleFileUpload}
+      />
     </div>
   );
 }

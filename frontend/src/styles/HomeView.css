@@ -73,7 +73,7 @@ h1 {
   margin-bottom: 15px;
 }
 
-.create-test-btn, .toggle-dropdown-btn {
+.create-test-btn, .toggle-dropdown-btn, .upload-test-btn {
   padding: 8px 15px;
   background-color: #333;
   color: white;
@@ -83,7 +83,7 @@ h1 {
   transition: background-color 0.2s;
 }
 
-.create-test-btn:hover, .toggle-dropdown-btn:hover {
+.create-test-btn:hover, .toggle-dropdown-btn:hover, .upload-test-btn:hover {
   background-color: #444;
 }
 
