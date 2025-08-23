@@ -54,10 +54,7 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
 
   const safeSections = test.sections || [];
   const currentSection = safeSections[currentSectionIndex] || { passage: "", questions: [] };
-  const currentQuestion =
-    currentSection.questions &&
-    currentSection.questions.length > 0 &&
-    currentSection.questions[currentQuestionIndex]
+  const currentQuestion = currentSection.questions[currentQuestionIndex]
 
 
   // Timer state
@@ -150,6 +147,7 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
 
     if (activeHighlighter === "eraser") {
       // Process each highlight that overlaps with the selection
+      // @ts-ignore
       setPassageHighlights(prevHighlights => {
         const newHighlights = [];
 
@@ -325,12 +323,14 @@ export default function DisplayView({ test, onUpdate, setAppState }: Props) {
         // Extract parts between spans and inside spans separately
         let lastIndex = 0;
         let insideSpan = false;
+        // @ts-ignore
         let spanContent = '';
+        // @ts-ignore
         let spanClass = '';
 
         // Helper function to apply search highlighting to a text segment
-        const highlightSearchTerms = (text) => {
-          return text.replace(searchRegex, match =>
+        const highlightSearchTerms = (text: string) => {
+          return text.replace(searchRegex, (match: string) =>
             `<span class="search-highlight">${match}</span>`
           );
         };
@@ -521,14 +521,15 @@ const handleUpdateChoice = (choiceIndex: number) => {
                 question={currentQuestion}
                 onSelectChoice={(choiceIndex) => {
                   if (!currentQuestion) return;
+                  const cq = safeSections[currentSectionIndex].questions[currentQuestionIndex];
 
-                  const previousSelection = currentQuestion.selectedChoice;
+                  const previousSelection = cq.selectedChoice;
                   const wasIncorrect =
                     previousSelection !== undefined &&
-                    previousSelection !== currentQuestion.correctChoice;
+                    previousSelection !== cq.correctChoice;
 
                   const updatedQuestion = {
-                    ...currentQuestion,
+                    ...cq,
                     selectedChoice: choiceIndex,
                     revealedIncorrectChoice: wasIncorrect
                       ? previousSelection
@@ -615,7 +616,6 @@ const handleUpdateChoice = (choiceIndex: number) => {
           </button>
         </div>
       )}
-
     </div>
   );
 }
