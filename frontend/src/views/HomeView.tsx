@@ -1,5 +1,6 @@
 import type { AppState, Test } from "../Types.tsx";
 import { useRef, useState } from "react";
+import { createSession, joinSession } from "../session/client";
 import "../styles/App.css";
 import "../styles/HomeView.css";
 
@@ -15,6 +16,7 @@ export default function HomeView({ appState, setAppState }: Props) {
   const [newTestName, setNewTestName] = useState("");
   const [newTestType, setNewTestType] = useState<"RC" | "LR">("RC");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [joinSessionId, setJoinSessionId] = useState("");
 
   const toggleTestCreation = () => {
     setMainDropdownOpen(false);
@@ -179,6 +181,44 @@ export default function HomeView({ appState, setAppState }: Props) {
     e.target.value = "";
   };
 
+  const handleCreateSession = async () => {
+    try {
+      const data = await createSession();
+      setAppState({
+        ...appState,
+        sessionInfo: {
+          sessionId: data.session_id,
+          token: data.host_token,
+          role: 'tutor',
+          connectedUsers: [],
+          lastSynced: Date.now(),
+          sharedTestId: appState.activeTestId || '',
+        }
+      });
+    } catch (err) {
+      console.error('Failed to create session', err);
+    }
+  };
+
+  const handleJoinSession = async () => {
+    try {
+      const data = await joinSession(joinSessionId);
+      setAppState({
+        ...appState,
+        sessionInfo: {
+          sessionId: joinSessionId,
+          token: data.participant_token,
+          role: 'student',
+          connectedUsers: [],
+          lastSynced: Date.now(),
+          sharedTestId: '',
+        }
+      });
+    } catch (err) {
+      console.error('Failed to join session', err);
+    }
+  };
+
   return (
     <div className="home-view">
       <h1>Welcome to the Test Manager</h1>
@@ -190,6 +230,19 @@ export default function HomeView({ appState, setAppState }: Props) {
 
         <button className="upload-test-btn" onClick={handleUploadClick}>
           Upload Tests
+        </button>
+
+        <button onClick={handleCreateSession}>
+          Start Session
+        </button>
+        <input
+          type="text"
+          placeholder="Session ID"
+          value={joinSessionId}
+          onChange={(e) => setJoinSessionId(e.target.value)}
+        />
+        <button onClick={handleJoinSession}>
+          Join Session
         </button>
 
         {/* Toggle Dropdown Button (appears as "+") */}

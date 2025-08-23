@@ -54,8 +54,8 @@ export default function App() {
       onUpdate={(sectionIndex, questionIndex, updatedQuestion) =>
         updateQuestion(sectionIndex, questionIndex, updatedQuestion)
       }
+      sessionInfo={appState.sessionInfo}
       setAppState={(updaterFn) => setAppState(prevState => updaterFn(prevState))}
-
     />
   )}
 
