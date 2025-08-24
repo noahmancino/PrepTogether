@@ -161,6 +161,10 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    setQuestionPos({ section: 0, question: 0 });
+  }, [appState.viewMode]);
+
   const resetTestProgress = (testId: string) => {
     const target = appState.tests[testId];
     if (!target) return;

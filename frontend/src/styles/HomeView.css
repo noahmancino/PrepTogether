@@ -69,13 +69,14 @@ h1 {
 
 
 .actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 15px;
   margin-bottom: 20px;
   width: 100%;
   max-width: 500px;
 }
+
 
 .action-btn {
   padding: 12px 15px;

@@ -151,6 +151,7 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
                     session.highlights = []
                     session.search = ""
             elif msg_type == "state_update":
+                # TODO: implement ops (e.g reset test)
                 patch = data.get("patch")
                 if isinstance(patch, dict):
                     session.state.update(patch)

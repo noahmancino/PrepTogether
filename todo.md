@@ -16,3 +16,4 @@ consistency in approach would probably be better.
 
 # Bugs
 - Highlighting. Selecting the correct can be frustrating, and the eraser tool can behave strangely
+- Buttons off-center after starting a session

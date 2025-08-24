@@ -43,7 +43,6 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
     }
   };
 
-
   // Creates a new test and switches to Edit mode
   const createTest = (name: string, type: "RC" | "LR") => {
     onCreateTest(name, type);
