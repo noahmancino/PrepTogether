@@ -61,3 +61,12 @@ export async function joinSession(sessionId: string) {
   if (!resp.ok) throw new Error('Failed to join session');
   return resp.json() as Promise<{ participant_token: string }>;
 }
+
+export async function endSession(sessionId: string, token: string) {
+  const resp = await fetch(`/sessions/${sessionId}/leave`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!resp.ok) throw new Error('Failed to end session');
+}

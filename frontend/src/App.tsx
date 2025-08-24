@@ -134,9 +134,12 @@ export default function App() {
     sendStateUpdate({ op: 'importTests', tests });
   };
 
-  const setSessionInfo = (info: CollaborativeSession) => {
+  const setSessionInfo = (info: CollaborativeSession | null) => {
     setAppState({ ...appState, sessionInfo: info });
-    sendStateUpdate({ op: 'setSessionInfo', info });
+    console.log(appState.sessionInfo)
+    if (info != null) {
+      sendStateUpdate({ op: 'setSessionInfo', info });
+    }
   };
 
   const resetTestProgress = (testId: string) => {

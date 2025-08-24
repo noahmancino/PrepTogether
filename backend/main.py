@@ -57,7 +57,6 @@ async def create_session(state: dict = Body(...)) -> dict:
     SESSIONS[session_id] = Session(host_token=host_token, state=state)
     return {"session_id": session_id, "host_token": host_token}
 
-
 @app.post("/sessions/{session_id}/join")
 async def join_session(session_id: str) -> dict:
     """Join an existing session and receive a participant token."""
@@ -68,6 +67,18 @@ async def join_session(session_id: str) -> dict:
     participant_token = uuid.uuid4().hex
     session.participants.add(participant_token)
     return {"participant_token": participant_token}
+
+
+@app.post("/sessions/{session_id}/leave")
+async def leave_session(session_id: str, token: str) -> None:
+    """Leave a session."""
+    session = SESSIONS.get(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    else:
+        session.participants.discard(token)
+        if not session.participants:
+            SESSIONS.pop(session_id)
 
 
 # ---------------------------------------------------------------------------

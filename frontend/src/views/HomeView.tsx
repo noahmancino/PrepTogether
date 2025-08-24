@@ -1,6 +1,6 @@
 import type { AppState, Test, CollaborativeSession } from "../Types.tsx";
 import { useRef, useState } from "react";
-import { createSession, joinSession } from "../session/client";
+import { createSession, endSession } from "../session/client";
 import "../styles/App.css";
 import "../styles/HomeView.css";
 
@@ -11,7 +11,7 @@ type Props = {
   onEditTest: (testId: string) => void;
   onDeleteTest: (testId: string) => void;
   onImportTests: (tests: Record<string, Test>) => void;
-  onSetSessionInfo: (info: CollaborativeSession) => void;
+  onSetSessionInfo: (info: CollaborativeSession | null) => void;
 };
 
 export default function HomeView({ appState, onCreateTest, onViewTest, onEditTest, onDeleteTest, onImportTests, onSetSessionInfo }: Props) {
@@ -21,7 +21,6 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
   const [newTestName, setNewTestName] = useState("");
   const [newTestType, setNewTestType] = useState<"RC" | "LR">("RC");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [joinSessionId, setJoinSessionId] = useState("");
   const sessionActive = !!appState.sessionInfo;
 
   const toggleTestCreation = () => {
@@ -166,26 +165,28 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
     }
   };
 
-  const handleJoinSession = async () => {
-    try {
-      const data = await joinSession(joinSessionId);
-      onSetSessionInfo({
-        sessionId: joinSessionId,
-        token: data.participant_token,
-        role: 'student',
-        connectedUsers: [],
-        lastSynced: Date.now(),
-        sharedTestId: '',
-      });
-    } catch (err) {
-      console.error('Failed to join session', err);
-    }
-  };
+  const handleEndSession = async () => {
+    const token = appState.sessionInfo?.token;
+    const sessionId = appState.sessionInfo?.sessionId;
+    onSetSessionInfo(null);
+    if (!token || !sessionId) return;
+    await endSession(sessionId, token)
+  }
+
 
   return (
     <div className="home-view">
       <h1>Welcome to the Test Manager</h1>
       <div className="actions">
+
+
+      {sessionActive && (
+          <div>
+            <button onClick={handleEndSession}>
+              End Session
+            </button>
+          </div>
+      )}
 
         {!sessionActive && (
           <button className="upload-test-btn" onClick={handleUploadClick}>
@@ -196,13 +197,6 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
         {!sessionActive && (
           <>
             <button onClick={handleCreateSession}>Start Session</button>
-            <input
-              type="text"
-              placeholder="Session ID"
-              value={joinSessionId}
-              onChange={(e) => setJoinSessionId(e.target.value)}
-            />
-            <button onClick={handleJoinSession}>Join Session</button>
             <button className="create-test-btn" onClick={toggleTestCreation}>
               Create New Test
             </button>
@@ -264,6 +258,7 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
         </form>
       </div>
       )}
+
 
 
       {/* Main Dropdown Menu */}
