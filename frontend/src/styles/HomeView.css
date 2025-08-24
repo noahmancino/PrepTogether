@@ -69,12 +69,19 @@ h1 {
 
 .actions {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #2a2a2a;
+  border-radius: 8px;
 }
 
-.create-test-btn, .toggle-dropdown-btn, .upload-test-btn {
-  padding: 8px 15px;
+.create-test-btn,
+.upload-test-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
   background-color: #333;
   color: white;
   border: 1px solid #555;
@@ -83,8 +90,29 @@ h1 {
   transition: background-color 0.2s;
 }
 
-.create-test-btn:hover, .toggle-dropdown-btn:hover, .upload-test-btn:hover {
+.toggle-dropdown-btn {
+  width: 40px;
+  height: 40px;
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: background-color 0.2s;
+}
+
+.create-test-btn:hover,
+.upload-test-btn:hover,
+.toggle-dropdown-btn:hover {
   background-color: #444;
+}
+
+.action-icon {
+  font-size: 18px;
 }
 
 /*.create-test-btn,*/
