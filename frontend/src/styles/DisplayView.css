@@ -156,31 +156,35 @@
 
 
 .eliminate-button {
-  background-color: #444;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  width: 30px;
-  height: 30px;
-  margin-left: 10px;
+  background: transparent;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  margin-left: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s;
   font-size: 14px;
 }
 
 .eliminate-button:hover {
   background-color: #555;
+  color: #fff;
 }
 
 .eliminate-button.active {
   background-color: #772c2c;
+  color: #fff;
+  border-color: #772c2c;
 }
 
 .eliminate-button.active:hover {
   background-color: #974444;
+  border-color: #974444;
 }
 
 /* Show Answer Button */

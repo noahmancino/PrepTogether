@@ -189,36 +189,34 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
     <div className="home-view">
       <h1>Welcome to the Test Manager</h1>
       <div className="actions">
-
-
-      {sessionActive && (
+        {sessionActive && (
           <>
-            <button className="copy-link-btn" onClick={handleCopyLink}>
+            <button className="action-btn copy-link-btn" onClick={handleCopyLink}>
               {copySuccess ? "Copied!" : "Copy Session Link"}
             </button>
-            <button onClick={handleEndSession}>
+            <button className="action-btn" onClick={handleEndSession}>
               End Session
             </button>
           </>
-      )}
+        )}
 
         {!sessionActive && (
-          <button className="upload-test-btn" onClick={handleUploadClick}>
+          <button className="action-btn upload-test-btn" onClick={handleUploadClick}>
             Upload Tests
           </button>
         )}
 
         {!sessionActive && (
           <>
-            <button onClick={handleCreateSession}>Start Session</button>
-            <button className="create-test-btn" onClick={toggleTestCreation}>
+            <button className="action-btn" onClick={handleCreateSession}>Start Session</button>
+            <button className="action-btn create-test-btn" onClick={toggleTestCreation}>
               Create New Test
             </button>
           </>
         )}
 
         <button
-          className="toggle-dropdown-btn"
+          className="action-btn toggle-dropdown-btn"
           onClick={toggleMainDropdown}
           aria-label="Toggle Dropdown"
         >

@@ -43,8 +43,9 @@ export default function QuestionDisplay({
                   }}
                   title={isEliminated ? "Restore answer choice" : "Eliminate answer choice"}
                   aria-label={isEliminated ? "Restore answer choice" : "Eliminate answer choice"}
+                  aria-pressed={isEliminated}
                 >
-                  {isEliminated ? "↩" : "✕"}
+                  {isEliminated ? "↺" : "✕"}
                 </button>
               )}
             </div>
