@@ -193,18 +193,9 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
 
       {sessionActive && (
           <>
-            <div className="session-link-container">
-              <input
-                type="text"
-                readOnly
-                value={`${window.location.origin}?session=${appState.sessionInfo?.sessionId}`}
-                className="session-link-display"
-                onClick={(e) => (e.currentTarget as HTMLInputElement).select()}
-              />
-              <button className="copy-link-btn" onClick={handleCopyLink}>
-                {copySuccess ? "Copied!" : "Copy Link"}
-              </button>
-            </div>
+            <button className="copy-link-btn" onClick={handleCopyLink}>
+              {copySuccess ? "Copied!" : "Copy Session Link"}
+            </button>
             <button onClick={handleEndSession}>
               End Session
             </button>

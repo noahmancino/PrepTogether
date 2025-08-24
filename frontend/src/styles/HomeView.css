@@ -73,7 +73,10 @@ h1 {
   margin-bottom: 15px;
 }
 
-.create-test-btn, .toggle-dropdown-btn, .upload-test-btn {
+.create-test-btn,
+.toggle-dropdown-btn,
+.upload-test-btn,
+.copy-link-btn {
   padding: 8px 15px;
   background-color: #333;
   color: white;
@@ -83,36 +86,11 @@ h1 {
   transition: background-color 0.2s;
 }
 
-.create-test-btn:hover, .toggle-dropdown-btn:hover, .upload-test-btn:hover {
-  background-color: #444;
-}
-
-.session-link-container {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.session-link-display {
-  padding: 8px 12px;
-  border: 1px solid #555;
-  background-color: #1f1f1f;
-  color: #f3f4f6;
-  border-radius: 4px;
-}
-
-.copy-link-btn {
-  padding: 8px 15px;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
+.create-test-btn:hover,
+.toggle-dropdown-btn:hover,
+.upload-test-btn:hover,
 .copy-link-btn:hover {
-  background-color: #1e40af;
+  background-color: #444;
 }
 
 /*.create-test-btn,*/
