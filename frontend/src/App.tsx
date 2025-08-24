@@ -5,7 +5,7 @@ import HomeView from "./views/HomeView";
 import EditView from "./views/EditView";
 import DisplayView from "./views/DisplayView";
 import { multipleTestsEditingState } from "./sampleStates.tsx";
-import { connectSession, type SessionEvent } from "./session/client";
+import { connectSession, joinSession, type SessionEvent } from "./session/client";
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>({
@@ -141,6 +141,25 @@ export default function App() {
       sendStateUpdate({ op: 'setSessionInfo', info });
     }
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session');
+    if (sessionId && !appState.sessionInfo) {
+      joinSession(sessionId)
+        .then((data) => {
+          setSessionInfo({
+            sessionId,
+            token: data.participant_token,
+            role: 'student',
+            connectedUsers: [],
+            lastSynced: Date.now(),
+            sharedTestId: '',
+          });
+        })
+        .catch((err) => console.error('Failed to join session', err));
+    }
+  }, []);
 
   const resetTestProgress = (testId: string) => {
     const target = appState.tests[testId];

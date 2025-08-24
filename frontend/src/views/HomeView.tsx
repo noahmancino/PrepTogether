@@ -22,6 +22,7 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
   const [newTestType, setNewTestType] = useState<"RC" | "LR">("RC");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const sessionActive = !!appState.sessionInfo;
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const toggleTestCreation = () => {
     setMainDropdownOpen(false);
@@ -173,6 +174,16 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
     await endSession(sessionId, token)
   }
 
+  const handleCopyLink = () => {
+    const sessionId = appState.sessionInfo?.sessionId;
+    if (!sessionId) return;
+    const url = `${window.location.origin}?session=${sessionId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
+  };
+
 
   return (
     <div className="home-view">
@@ -181,11 +192,23 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
 
 
       {sessionActive && (
-          <div>
+          <>
+            <div className="session-link-container">
+              <input
+                type="text"
+                readOnly
+                value={`${window.location.origin}?session=${appState.sessionInfo?.sessionId}`}
+                className="session-link-display"
+                onClick={(e) => (e.currentTarget as HTMLInputElement).select()}
+              />
+              <button className="copy-link-btn" onClick={handleCopyLink}>
+                {copySuccess ? "Copied!" : "Copy Link"}
+              </button>
+            </div>
             <button onClick={handleEndSession}>
               End Session
             </button>
-          </div>
+          </>
       )}
 
         {!sessionActive && (
