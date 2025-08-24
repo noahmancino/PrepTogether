@@ -201,15 +201,5 @@ export const multipleTestsEditingState: AppState = {
   },
   activeTestId: null,
   viewMode: "home",
-  sessionInfo: {
-    sessionId: "sample-session",
-    token: "sample-token",
-    role: "tutor",
-    connectedUsers: [],
-    lastSynced: Date.now(),
-    sharedTestId: "",
-    userId: "user-789",
-    startTime: new Date().toISOString(),
-    isAuthor: true,
-  }
+  sessionInfo: null
 };

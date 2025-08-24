@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import {useEffect, useRef, useState} from "react";
 import Question from "../components/Questions.tsx";
 import "../styles/App.css";
 import "../styles/DisplayView.css";
 import HomeButton from "../components/HomeButton.tsx";
-import type { Test, CollaborativeSession } from "../Types.tsx";
+import type {CollaborativeSession, Test} from "../Types.tsx";
 import QuestionNavigation from "../components/QuestionNavigation.tsx";
 import ShowAnswerButton from "../components/ShowAnswerButton.tsx";
-import type { SessionEvent } from "../session/client";
+import type {SessionEvent} from "../session/client";
 
 type HighlightType = "yellow" | "eraser" | "none";
 
@@ -97,9 +97,7 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
       if (sessionInfo.role === 'tutor') {
         const timerInterval = setInterval(() => {
           setTimer((prev) => {
-            const next = prev + 1;
-            sendSessionEvent({ type: 'timer', remaining: next });
-            return next;
+            return prev + 1;
           });
         }, 1000);
         return () => clearInterval(timerInterval);
@@ -137,14 +135,11 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
 
   useEffect(() => {
     if (!sessionEvent) return;
-    if (sessionEvent.type === 'timer') {
-      setTimer(sessionEvent.remaining);
-    } else if (sessionEvent.type === 'highlight') {
+    if (sessionEvent.type === 'highlight') {
       setPassageHighlights((prev) => [...prev, sessionEvent.highlight]);
     } else if (sessionEvent.type === 'search') {
       setSearchTerm(sessionEvent.term);
     } else if (sessionEvent.type === 'state') {
-      setTimer(sessionEvent.timer);
       setPassageHighlights(sessionEvent.highlights);
       setSearchTerm(sessionEvent.search);
     }

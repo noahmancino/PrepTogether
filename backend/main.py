@@ -34,7 +34,6 @@ class Session:
         self.connections: Dict[str, WebSocket] = {}
         self.highlights: List[dict] = []
         self.search: str = ""
-        self.timer: float = 0.0  # remaining seconds
         self.state: dict = state or {}
         self.view: str = self.state.get("viewMode", "home")
         self.question_index: dict = {"section": 0, "question": 0}
@@ -109,7 +108,6 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     await websocket.send_json(
         {
             "type": "state",
-            "timer": session.timer,
             "highlights": session.highlights,
             "search": session.search,
             "state": session.state,
@@ -121,11 +119,10 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     try:
         while True:
             data = await websocket.receive_json()
+            print(data)
             msg_type = data.get("type")
 
-            if msg_type == "timer" and token == session.host_token:
-                session.timer = float(data.get("remaining", 0))
-            elif msg_type == "highlight":
+            if msg_type == "highlight":
                 highlight = data.get("highlight")
                 if highlight is not None:
                     session.highlights.append(highlight)
@@ -147,6 +144,9 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
                 if isinstance(patch, dict):
                     session.state.update(patch)
 
+            if session.question_index['question'] == 1:
+                data = {'type': 'highlight', 'highlight': {'id': 'highlight-1756067394076', 'startIndex': 0, 'endIndex': 10, 'type': 'yellow'}}
+            print(data)
             await broadcast(session, data)
     except WebSocketDisconnect:
         pass

@@ -6,7 +6,6 @@ type Highlight = {
 };
 
 export type SessionEvent =
-  | { type: 'timer'; remaining: number }
   | { type: 'highlight'; highlight: Highlight }
   | { type: 'search'; term: string }
   | { type: 'state_update'; patch: unknown }
