@@ -185,11 +185,13 @@ export default function HomeView({ appState, setAppState }: Props) {
       <div className="actions">
         {/* Create New Test Button - now toggles the creation form */}
         <button className="create-test-btn" onClick={toggleTestCreation}>
-          Create New Test
+          <span className="icon">➕</span>
+          New Test
         </button>
 
         <button className="upload-test-btn" onClick={handleUploadClick}>
-          Upload Tests
+          <span className="icon">📤</span>
+          Upload
         </button>
 
         {/* Toggle Dropdown Button (appears as "+") */}
@@ -198,7 +200,7 @@ export default function HomeView({ appState, setAppState }: Props) {
           onClick={toggleMainDropdown}
           aria-label="Toggle Dropdown"
         >
-          {mainDropdownOpen ? "-" : "+"} {/* Symbol toggles between + and - */}
+          {mainDropdownOpen ? "−" : "＋"}
         </button>
       </div>
 

@@ -67,24 +67,70 @@ h1 {
   color: #ffffff;
 }
 
+
 .actions {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
-.create-test-btn, .toggle-dropdown-btn, .upload-test-btn {
+.actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.create-test-btn {
   padding: 8px 15px;
-  background-color: #333;
-  color: white;
+  background-color: transparent;
+  color: #4ade80;
+  border: 1px solid #4ade80;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.create-test-btn:hover {
+  background-color: #4ade80;
+  color: #1a1a1a;
+}
+
+.upload-test-btn {
+  padding: 8px 15px;
+  background-color: transparent;
+  color: #f3f4f6;
   border: 1px solid #555;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.create-test-btn:hover, .toggle-dropdown-btn:hover, .upload-test-btn:hover {
+.upload-test-btn:hover {
   background-color: #444;
+}
+
+.toggle-dropdown-btn {
+  background-color: transparent;
+  color: #f3f4f6;
+  border: 1px solid #555;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.toggle-dropdown-btn:hover {
+  background-color: #333;
+  transform: scale(1.1);
+}
+
+.icon {
+  font-size: 1.2rem;
 }
 
 /*.create-test-btn,*/
