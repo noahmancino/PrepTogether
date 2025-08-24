@@ -74,9 +74,16 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
   const [score, setScore] = useState({ correct: 0, total: 0 });
 
   // Cleanup state when leaving display view
+
+  // without this, the useEffect happens twice on demount and you can't leave the view. Not really sure why!
+  const hasReset = useRef(false);
+
   useEffect(() => {
     return () => {
-      onResetTest(test.id);
+      if (!hasReset.current) {
+        onResetTest(test.id);
+        hasReset.current = true;
+      }
     };
   }, []);
 
