@@ -9,7 +9,18 @@ export type SessionEvent =
   | { type: 'timer'; remaining: number }
   | { type: 'highlight'; highlight: Highlight }
   | { type: 'search'; term: string }
-  | { type: 'state_update'; patch: unknown };
+  | { type: 'state_update'; patch: unknown }
+  | { type: 'view'; view: string }
+  | { type: 'question_index'; index: { section: number; question: number } }
+  | {
+      type: 'state';
+      timer: number;
+      highlights: Highlight[];
+      search: string;
+      state: unknown;
+      view: string;
+      question_index: { section: number; question: number };
+    };
 
 export type SessionConnection = {
   send: (event: SessionEvent) => void;
@@ -36,8 +47,12 @@ export function connectSession(
   };
 }
 
-export async function createSession() {
-  const resp = await fetch('http://localhost:8000/sessions', { method: 'POST' });
+export async function createSession(state: unknown) {
+  const resp = await fetch('http://localhost:8000/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state),
+  });
   if (!resp.ok) throw new Error(`Failed to create session: ${resp.status} ${resp.statusText}`);
   return resp.json() as Promise<{ session_id: string; host_token: string }>;
 }

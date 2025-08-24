@@ -1,16 +1,18 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./styles/App.css";
 import type { AppState, Test, Section, CollaborativeSession, Question } from "./Types.tsx";
 import HomeView from "./views/HomeView";
 import EditView from "./views/EditView";
 import DisplayView from "./views/DisplayView";
 import { multipleTestsEditingState } from "./sampleStates.tsx";
-import type { SessionEvent } from "./session/client";
+import { connectSession, type SessionEvent } from "./session/client";
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>({
     ...multipleTestsEditingState,
   });
+  const [sessionEvent, setSessionEvent] = useState<SessionEvent | null>(null);
+  const [questionPos, setQuestionPos] = useState({ section: 0, question: 0 });
 
   const sessionSend = useRef<((event: SessionEvent) => void) | null>(null);
   const registerSessionSend = (sendFn: ((event: SessionEvent) => void) | null) => {
@@ -25,6 +27,38 @@ export default function App() {
   const activeTest = appState.activeTestId
     ? appState.tests[appState.activeTestId]
     : null;
+
+  useEffect(() => {
+    const info = appState.sessionInfo;
+    if (!info) {
+      registerSessionSend(null);
+      return;
+    }
+    const conn = connectSession(info.sessionId, info.token, (event) => {
+      if (event.type === 'view') {
+        setAppState((prev) => ({ ...prev, viewMode: event.view }));
+      } else if (event.type === 'question_index') {
+        setQuestionPos(event.index);
+      } else if (event.type === 'state') {
+        setAppState((prev) => ({ ...(event.state as AppState), sessionInfo: prev.sessionInfo }));
+        setQuestionPos(event.question_index);
+        setSessionEvent(event);
+      } else {
+        setSessionEvent(event);
+      }
+    });
+    registerSessionSend(conn.send);
+    return () => {
+      conn.close();
+      registerSessionSend(null);
+    };
+  }, [appState.sessionInfo]);
+
+  const sendViewChange = (view: string) => {
+    if (appState.sessionInfo && sessionSend.current) {
+      sessionSend.current({ type: 'view', view });
+    }
+  };
 
   const updateQuestion = (sectionIndex: number, questionIndex: number, updatedQuestion: Question) => {
     if (!activeTest) return;
@@ -73,16 +107,19 @@ export default function App() {
     };
     setAppState(newState);
     sendStateUpdate({ op: 'createTest', test: newTest, activeTestId: newTestId });
+    sendViewChange('edit');
   };
 
   const viewTest = (testId: string) => {
     setAppState({ ...appState, activeTestId: testId, viewMode: "display" });
     sendStateUpdate({ op: 'viewTest', testId });
+    sendViewChange('display');
   };
 
   const editTest = (testId: string) => {
     setAppState({ ...appState, activeTestId: testId, viewMode: "edit" });
     sendStateUpdate({ op: 'editTest', testId });
+    sendViewChange('edit');
   };
 
   const deleteTest = (testId: string) => {
@@ -122,6 +159,7 @@ export default function App() {
   const goHome = () => {
     setAppState({ ...appState, viewMode: "home", activeTestId: null });
     sendStateUpdate({ op: 'goHome' });
+    sendViewChange('home');
   };
 
   return (
@@ -147,7 +185,13 @@ export default function App() {
           sessionInfo={appState.sessionInfo}
           onResetTest={resetTestProgress}
           onGoHome={goHome}
-          registerSessionSend={registerSessionSend}
+          sessionEvent={sessionEvent}
+          questionPos={questionPos}
+          onQuestionPosChange={(pos) => {
+            setQuestionPos(pos);
+            sessionSend.current?.({ type: 'question_index', index: pos });
+          }}
+          sendSessionEvent={(event) => sessionSend.current?.(event)}
         />
       )}
 

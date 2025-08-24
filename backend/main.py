@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Dict, List
 import local_config
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -28,13 +28,16 @@ app.add_middleware(
 class Session:
     """Simple in-memory representation of a collaborative session."""
 
-    def __init__(self, host_token: str) -> None:
+    def __init__(self, host_token: str, state: dict | None = None) -> None:
         self.host_token = host_token
         self.participants: set[str] = set()
         self.connections: Dict[str, WebSocket] = {}
         self.highlights: List[dict] = []
         self.search: str = ""
         self.timer: float = 0.0  # remaining seconds
+        self.state: dict = state or {}
+        self.view: str = self.state.get("viewMode", "home")
+        self.question_index: dict = {"section": 0, "question": 0}
 
 
 # session_id -> Session
@@ -47,12 +50,12 @@ SESSIONS: Dict[str, Session] = {}
 
 
 @app.post("/sessions")
-async def create_session() -> dict:
+async def create_session(state: dict = Body(...)) -> dict:
     """Create a new collaborative session and return identifiers."""
     print("creating session... ", end="", flush=True)
     session_id = uuid.uuid4().hex
     host_token = uuid.uuid4().hex
-    SESSIONS[session_id] = Session(host_token=host_token)
+    SESSIONS[session_id] = Session(host_token=host_token, state=state)
     return {"session_id": session_id, "host_token": host_token}
 
 
@@ -109,6 +112,9 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
             "timer": session.timer,
             "highlights": session.highlights,
             "search": session.search,
+            "state": session.state,
+            "view": session.view,
+            "question_index": session.question_index,
         }
     )
 
@@ -125,6 +131,21 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
                     session.highlights.append(highlight)
             elif msg_type == "search":
                 session.search = data.get("term", "")
+            elif msg_type == "view":
+                session.view = data.get("view", "home")
+                session.state["viewMode"] = session.view
+                session.highlights = []
+                session.search = ""
+            elif msg_type == "question_index":
+                index = data.get("index")
+                if isinstance(index, dict):
+                    session.question_index = index
+                    session.highlights = []
+                    session.search = ""
+            elif msg_type == "state_update":
+                patch = data.get("patch")
+                if isinstance(patch, dict):
+                    session.state.update(patch)
 
             await broadcast(session, data)
     except WebSocketDisconnect:

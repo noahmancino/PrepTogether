@@ -6,7 +6,7 @@ import HomeButton from "../components/HomeButton.tsx";
 import type { Test, CollaborativeSession } from "../Types.tsx";
 import QuestionNavigation from "../components/QuestionNavigation.tsx";
 import ShowAnswerButton from "../components/ShowAnswerButton.tsx";
-import { connectSession, type SessionConnection, type SessionEvent } from "../session/client";
+import type { SessionEvent } from "../session/client";
 
 type HighlightType = "yellow" | "eraser" | "none";
 
@@ -20,13 +20,16 @@ type Props = {
   ) => void;
   onResetTest: (testId: string) => void;
   onGoHome: () => void;
-  registerSessionSend: (send: ((event: SessionEvent) => void) | null) => void;
+  sessionEvent: SessionEvent | null;
+  questionPos: { section: number; question: number };
+  onQuestionPosChange: (pos: { section: number; question: number }) => void;
+  sendSessionEvent: (event: SessionEvent) => void;
 };
 
-export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, onGoHome, registerSessionSend }: Props) {
+export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, onGoHome, sessionEvent, questionPos, onQuestionPosChange, sendSessionEvent }: Props) {
   // Track current question across all sections
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(questionPos.section);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(questionPos.question);
   const toggleEliminatedChoice = (
     sectionIndex: number,
     questionIndex: number,
@@ -95,7 +98,7 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
         const timerInterval = setInterval(() => {
           setTimer((prev) => {
             const next = prev + 1;
-            sessionRef.current?.send({ type: 'timer', remaining: next });
+            sendSessionEvent({ type: 'timer', remaining: next });
             return next;
           });
         }, 1000);
@@ -125,30 +128,27 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
     type: string;
   }[]>([]);
 
-  const sessionRef = useRef<SessionConnection | null>(null);
-
-  // establish websocket connection when participating in a session
   useEffect(() => {
-    if (!sessionInfo) {
-      registerSessionSend(null);
-      return;
+    setCurrentSectionIndex(questionPos.section);
+    setCurrentQuestionIndex(questionPos.question);
+    setPassageHighlights([]);
+    setSearchTerm("");
+  }, [questionPos]);
+
+  useEffect(() => {
+    if (!sessionEvent) return;
+    if (sessionEvent.type === 'timer') {
+      setTimer(sessionEvent.remaining);
+    } else if (sessionEvent.type === 'highlight') {
+      setPassageHighlights((prev) => [...prev, sessionEvent.highlight]);
+    } else if (sessionEvent.type === 'search') {
+      setSearchTerm(sessionEvent.term);
+    } else if (sessionEvent.type === 'state') {
+      setTimer(sessionEvent.timer);
+      setPassageHighlights(sessionEvent.highlights);
+      setSearchTerm(sessionEvent.search);
     }
-    const conn = connectSession(sessionInfo.sessionId, sessionInfo.token, (event) => {
-      if (event.type === 'timer') {
-        setTimer(event.remaining);
-      } else if (event.type === 'highlight') {
-        setPassageHighlights((prev) => [...prev, event.highlight]);
-      } else if (event.type === 'search') {
-        setSearchTerm(event.term);
-      }
-    });
-    sessionRef.current = conn;
-    registerSessionSend(conn.send);
-    return () => {
-      conn.close();
-      registerSessionSend(null);
-    };
-  }, [sessionInfo]);
+  }, [sessionEvent]);
 
   const handlePassageHighlight = () => {
     if (activeHighlighter === "none") return;
@@ -269,7 +269,7 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
           ...nonOverlapping,
           merged
         ]);
-        sessionRef.current?.send({ type: 'highlight', highlight: merged });
+        sendSessionEvent({ type: 'highlight', highlight: merged });
       } else {
         // No overlaps, just add the new highlight
         const newHighlight = {
@@ -282,7 +282,7 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
           ...passageHighlights,
           newHighlight
         ]);
-        sessionRef.current?.send({ type: 'highlight', highlight: newHighlight });
+        sendSessionEvent({ type: 'highlight', highlight: newHighlight });
       }
     }
 
@@ -421,11 +421,10 @@ const handlePrevQuestion = () => {
     return;
   }
   if (currentQuestionIndex > 0) {
-    setCurrentQuestionIndex(currentQuestionIndex - 1);
+    onQuestionPosChange({ section: currentSectionIndex, question: currentQuestionIndex - 1 });
   } else {
     const currentSection = safeSections[currentSectionIndex - 1] || { questions: [] };
-    setCurrentSectionIndex(currentSectionIndex - 1);
-    setCurrentQuestionIndex(currentSection.questions.length - 1);
+    onQuestionPosChange({ section: currentSectionIndex - 1, question: currentSection.questions.length - 1 });
   }
 
     // Reset the search term when changing questions
@@ -439,10 +438,9 @@ const handleNextQuestion = () => {
     return;
   }
   if (currentQuestionIndex < currentSection.questions.length - 1) {
-    setCurrentQuestionIndex(currentQuestionIndex + 1);
+    onQuestionPosChange({ section: currentSectionIndex, question: currentQuestionIndex + 1 });
   } else {
-    setCurrentSectionIndex(currentSectionIndex + 1);
-    setCurrentQuestionIndex(0);
+    onQuestionPosChange({ section: currentSectionIndex + 1, question: 0 });
   }
 };
 
@@ -517,7 +515,7 @@ const handleUpdateChoice = (choiceIndex: number) => {
             onChange={(e) => {
               const val = e.target.value;
               setSearchTerm(val);
-              sessionRef.current?.send({ type: 'search', term: val });
+              sendSessionEvent({ type: 'search', term: val });
             }}
           />
         </div>
@@ -609,8 +607,7 @@ const handleUpdateChoice = (choiceIndex: number) => {
         currentSectionIndex={currentSectionIndex}
         currentQuestionIndex={currentQuestionIndex}
         onQuestionSelect={(sectionIndex, questionIndex) => {
-          setCurrentSectionIndex(sectionIndex);
-          setCurrentQuestionIndex(questionIndex);
+          onQuestionPosChange({ section: sectionIndex, question: questionIndex });
         }}
       />
 

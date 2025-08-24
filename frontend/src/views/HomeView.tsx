@@ -22,6 +22,7 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
   const [newTestType, setNewTestType] = useState<"RC" | "LR">("RC");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [joinSessionId, setJoinSessionId] = useState("");
+  const sessionActive = !!appState.sessionInfo;
 
   const toggleTestCreation = () => {
     setMainDropdownOpen(false);
@@ -151,7 +152,7 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
 
   const handleCreateSession = async () => {
     try {
-      const data = await createSession();
+      const data = await createSession(appState);
       onSetSessionInfo({
         sessionId: data.session_id,
         token: data.host_token,
@@ -186,26 +187,27 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
       <h1>Welcome to the Test Manager</h1>
       <div className="actions">
 
-        <button className="upload-test-btn" onClick={handleUploadClick}>
-          Upload Tests
-        </button>
+        {!sessionActive && (
+          <button className="upload-test-btn" onClick={handleUploadClick}>
+            Upload Tests
+          </button>
+        )}
 
-        <button onClick={handleCreateSession}>
-          Start Session
-        </button>
-        <input
-          type="text"
-          placeholder="Session ID"
-          value={joinSessionId}
-          onChange={(e) => setJoinSessionId(e.target.value)}
-        />
-        <button onClick={handleJoinSession}>
-          Join Session
-        </button>
-
-        <button className="create-test-btn" onClick={toggleTestCreation}>
-          Create New Test
-        </button>
+        {!sessionActive && (
+          <>
+            <button onClick={handleCreateSession}>Start Session</button>
+            <input
+              type="text"
+              placeholder="Session ID"
+              value={joinSessionId}
+              onChange={(e) => setJoinSessionId(e.target.value)}
+            />
+            <button onClick={handleJoinSession}>Join Session</button>
+            <button className="create-test-btn" onClick={toggleTestCreation}>
+              Create New Test
+            </button>
+          </>
+        )}
 
         <button
           className="toggle-dropdown-btn"
@@ -217,6 +219,7 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
       </div>
 
       {/* Test Creation Dropdown */}
+      {!sessionActive && (
       <div className={`test-creation-dropdown ${testCreationOpen ? "open" : "closed"}`}>
         <form onSubmit={handleTestSubmit} className="test-creation-form">
           <div className="form-group">
@@ -260,6 +263,7 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
           <button className="cancel-test-btn" onClick={toggleTestCreation}>Cancel</button>
         </form>
       </div>
+      )}
 
 
       {/* Main Dropdown Menu */}
@@ -281,24 +285,28 @@ export default function HomeView({ appState, onCreateTest, onViewTest, onEditTes
               >
                 Take Test
               </div>
-              <div
-                className="test-option"
-                onClick={() => editTest(test.id)}
-              >
-                Edit Test
-              </div>
+              {!sessionActive && (
+                <div
+                  className="test-option"
+                  onClick={() => editTest(test.id)}
+                >
+                  Edit Test
+                </div>
+              )}
               <div
                 className="test-option"
                 onClick={() => downloadTest(test.id)}
               >
                 Download Test
               </div>
-              <div
-                className="test-option"
-                onClick={() => deleteTest(test.id)}
-              >
-                Delete Test
-              </div>
+              {!sessionActive && (
+                <div
+                  className="test-option"
+                  onClick={() => deleteTest(test.id)}
+                >
+                  Delete Test
+                </div>
+              )}
             </div>
           </div>
         ))}
