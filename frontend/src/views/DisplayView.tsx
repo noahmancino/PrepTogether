@@ -6,7 +6,7 @@ import HomeButton from "../components/HomeButton.tsx";
 import type {Test, Section, CollaborativeSession} from "../Types.tsx";
 import QuestionNavigation from "../components/QuestionNavigation.tsx";
 import ShowAnswerButton from "../components/ShowAnswerButton.tsx";
-import { connectSession, SessionConnection } from "../session/client";
+import { connectSession, type SessionConnection } from "../session/client";
 
 type HighlightType = "yellow" | "eraser" | "none";
 

@@ -1,3 +1,5 @@
+import type {AppState} from "../Types.tsx";
+
 export type SessionEvent =
   | { type: 'timer'; remaining: number }
   | { type: 'highlight'; highlight: any }
@@ -29,8 +31,8 @@ export function connectSession(
 }
 
 export async function createSession() {
-  const resp = await fetch('/sessions', { method: 'POST' });
-  if (!resp.ok) throw new Error('Failed to create session');
+  const resp = await fetch('http://localhost:8000/sessions', { method: 'POST' });
+  if (!resp.ok) throw new Error(`Failed to create session: ${resp.status} ${resp.statusText}`);
   return resp.json() as Promise<{ session_id: string; host_token: string }>;
 }
 

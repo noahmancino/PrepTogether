@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import uuid
 from typing import Dict, List
-
+import local_config
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[local_config.client_address],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +49,7 @@ SESSIONS: Dict[str, Session] = {}
 @app.post("/sessions")
 async def create_session() -> dict:
     """Create a new collaborative session and return identifiers."""
+    print("creating session... ", end="", flush=True)
     session_id = uuid.uuid4().hex
     host_token = uuid.uuid4().hex
     SESSIONS[session_id] = Session(host_token=host_token)

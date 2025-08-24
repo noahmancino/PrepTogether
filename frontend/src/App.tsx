@@ -1,4 +1,4 @@
-import {act, useState} from "react";
+import {act, useCallback, useState} from "react";
 import "./styles/App.css";
 import type { AppState } from "./Types.tsx";
 import HomeView from "./views/HomeView";
@@ -14,6 +14,15 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>({
     ...multipleTestsEditingState
   });
+
+  // const setAppState = (newState: AppState | ((prevState: AppState) => AppState)) => {
+  //   // Call the original setState
+  //   setAppStateInternal(newState);
+  //   if (appState.sessionInfo !== undefined) {
+  //
+  //   }
+  // };
+
 
   // Get the currently active test based on activeTestId
   const activeTest = appState.activeTestId
