@@ -1,4 +1,4 @@
-import type { AppState, Test } from "../Types.tsx";
+import type { AppState, Test, CollaborativeSession } from "../Types.tsx";
 import { useRef, useState } from "react";
 import { createSession, joinSession } from "../session/client";
 import "../styles/App.css";
@@ -6,10 +6,15 @@ import "../styles/HomeView.css";
 
 type Props = {
   appState: AppState;
-  setAppState: (newState: AppState) => void;
+  onCreateTest: (name: string, type: "RC" | "LR") => void;
+  onViewTest: (testId: string) => void;
+  onEditTest: (testId: string) => void;
+  onDeleteTest: (testId: string) => void;
+  onImportTests: (tests: Record<string, Test>) => void;
+  onSetSessionInfo: (info: CollaborativeSession) => void;
 };
 
-export default function HomeView({ appState, setAppState }: Props) {
+export default function HomeView({ appState, onCreateTest, onViewTest, onEditTest, onDeleteTest, onImportTests, onSetSessionInfo }: Props) {
   const [mainDropdownOpen, setMainDropdownOpen] = useState(true);
   const [openTestId, setOpenTestId] = useState<string | null>(null);
   const [testCreationOpen, setTestCreationOpen] = useState(false);
@@ -40,56 +45,22 @@ export default function HomeView({ appState, setAppState }: Props) {
 
   // Creates a new test and switches to Edit mode
   const createTest = (name: string, type: "RC" | "LR") => {
-    const newTestId = String(Date.now());
-    const newTest: Test = {
-      type: type,
-      id: newTestId,
-      name: name,
-      sections: [
-        {
-          passage: "",
-          questions: [],
-        },
-      ],
-    };
-
-    setAppState({
-      ...appState,
-      tests: {
-        ...appState.tests,
-        [newTestId]: newTest,
-      },
-      activeTestId: newTestId,
-      viewMode: "edit", // Switch to edit mode
-    });
+    onCreateTest(name, type);
   };
 
 
   // Opens an existing test for viewing
   const viewTest = (testId: string) => {
-    setAppState({
-      ...appState,
-      activeTestId: testId,
-      viewMode: "display", // Switch to display mode
-    });
+    onViewTest(testId);
   };
 
   // Opens an existing test for editing
   const editTest = (testId: string) => {
-    setAppState({
-      ...appState,
-      activeTestId: testId,
-      viewMode: "edit", // Switch to edit mode
-    });
+    onEditTest(testId);
   };
 
   const deleteTest = (testId: string) => {
-    const newTests = {...appState.tests};
-    delete newTests[testId];
-    setAppState({
-      ...appState,
-      tests: newTests,
-    });
+    onDeleteTest(testId);
   }
 
   // Toggles a specific test's dropdown
@@ -168,10 +139,7 @@ export default function HomeView({ appState, setAppState }: Props) {
             })),
           };
         });
-        setAppState({
-          ...appState,
-          tests: { ...appState.tests, ...newTests },
-        });
+        onImportTests(newTests);
       } catch (err) {
         console.error("Failed to upload tests", err);
       }
@@ -184,16 +152,13 @@ export default function HomeView({ appState, setAppState }: Props) {
   const handleCreateSession = async () => {
     try {
       const data = await createSession();
-      setAppState({
-        ...appState,
-        sessionInfo: {
-          sessionId: data.session_id,
-          token: data.host_token,
-          role: 'tutor',
-          connectedUsers: [],
-          lastSynced: Date.now(),
-          sharedTestId: appState.activeTestId || '',
-        }
+      onSetSessionInfo({
+        sessionId: data.session_id,
+        token: data.host_token,
+        role: 'tutor',
+        connectedUsers: [],
+        lastSynced: Date.now(),
+        sharedTestId: appState.activeTestId || '',
       });
     } catch (err) {
       console.error('Failed to create session', err);
@@ -203,16 +168,13 @@ export default function HomeView({ appState, setAppState }: Props) {
   const handleJoinSession = async () => {
     try {
       const data = await joinSession(joinSessionId);
-      setAppState({
-        ...appState,
-        sessionInfo: {
-          sessionId: joinSessionId,
-          token: data.participant_token,
-          role: 'student',
-          connectedUsers: [],
-          lastSynced: Date.now(),
-          sharedTestId: '',
-        }
+      onSetSessionInfo({
+        sessionId: joinSessionId,
+        token: data.participant_token,
+        role: 'student',
+        connectedUsers: [],
+        lastSynced: Date.now(),
+        sharedTestId: '',
       });
     } catch (err) {
       console.error('Failed to join session', err);

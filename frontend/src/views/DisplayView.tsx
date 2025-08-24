@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import Question from "../components/Questions.tsx";
 import "../styles/App.css";
-import "../styles/DisplayView.css"
+import "../styles/DisplayView.css";
 import HomeButton from "../components/HomeButton.tsx";
-import type {Test, Section, CollaborativeSession} from "../Types.tsx";
+import type { Test, CollaborativeSession } from "../Types.tsx";
 import QuestionNavigation from "../components/QuestionNavigation.tsx";
 import ShowAnswerButton from "../components/ShowAnswerButton.tsx";
-import { connectSession, type SessionConnection } from "../session/client";
+import { connectSession, type SessionConnection, type SessionEvent } from "../session/client";
 
 type HighlightType = "yellow" | "eraser" | "none";
 
@@ -16,13 +16,14 @@ type Props = {
   onUpdate: (
     sectionIndex: number,
     questionIndex: number,
-    updatedQuestion: any
+    updatedQuestion: unknown
   ) => void;
-  setAppState: (state: (prevState: any) => any) => void;
-
+  onResetTest: (testId: string) => void;
+  onGoHome: () => void;
+  registerSessionSend: (send: ((event: SessionEvent) => void) | null) => void;
 };
 
-export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }: Props) {
+export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, onGoHome, registerSessionSend }: Props) {
   // Track current question across all sections
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -75,28 +76,7 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
   // Cleanup state when leaving display view
   useEffect(() => {
     return () => {
-      setAppState((prevState: any) => {
-        const activeTest = prevState.tests[test.id];
-        if (!activeTest) return prevState;
-
-        const resetSections = activeTest.sections.map((section: Section) => ({
-          ...section,
-          questions: section.questions.map((q) => ({
-            ...q,
-            selectedChoice: undefined,
-            revealedIncorrectChoice: undefined,
-            eliminatedChoices: undefined,
-          })),
-        }));
-
-        return {
-          ...prevState,
-          tests: {
-            ...prevState.tests,
-            [test.id]: { ...activeTest, sections: resetSections },
-          },
-        };
-      });
+      onResetTest(test.id);
     };
   }, []);
 
@@ -135,14 +115,17 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
     id: string;
     startIndex: number;
     endIndex: number;
-    type: 'yellow';
+    type: string;
   }[]>([]);
 
   const sessionRef = useRef<SessionConnection | null>(null);
 
   // establish websocket connection when participating in a session
   useEffect(() => {
-    if (!sessionInfo) return;
+    if (!sessionInfo) {
+      registerSessionSend(null);
+      return;
+    }
     const conn = connectSession(sessionInfo.sessionId, sessionInfo.token, (event) => {
       if (event.type === 'timer') {
         setTimer(event.remaining);
@@ -153,7 +136,11 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
       }
     });
     sessionRef.current = conn;
-    return () => conn.close();
+    registerSessionSend(conn.send);
+    return () => {
+      conn.close();
+      registerSessionSend(null);
+    };
   }, [sessionInfo]);
 
   const handlePassageHighlight = () => {
@@ -169,8 +156,8 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
     const passageText = currentSection.passage;
 
     // Find the selected text in the passage
-    let selStartOffset = passageText.indexOf(selectionText);
-    let selEndOffset = selStartOffset + selectionText.length;
+    const selStartOffset = passageText.indexOf(selectionText);
+    const selEndOffset = selStartOffset + selectionText.length;
 
     // If we can't find the exact text, return without highlighting
     if (selStartOffset === -1) {
@@ -180,9 +167,8 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
 
     if (activeHighlighter === "eraser") {
       // Process each highlight that overlaps with the selection
-      // @ts-ignore
-      setPassageHighlights(prevHighlights => {
-        const newHighlights = [];
+      setPassageHighlights((prevHighlights: typeof passageHighlights) => {
+        const newHighlights: typeof passageHighlights = [];
 
         for (const highlight of prevHighlights) {
           // Case 1: No overlap - keep the highlight unchanged
@@ -298,7 +284,7 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
   };
 
   const renderPassageWithHighlights = () => {
-    let passage = currentSection.passage;
+    const passage = currentSection.passage;
 
     // Create an array to track highlighting for each character position
     const highlightMap = new Array(passage.length).fill(null);
@@ -360,10 +346,6 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
         // Extract parts between spans and inside spans separately
         let lastIndex = 0;
         let insideSpan = false;
-        // @ts-ignore
-        let spanContent = '';
-        // @ts-ignore
-        let spanClass = '';
 
         // Helper function to apply search highlighting to a text segment
         const highlightSearchTerms = (text: string) => {
@@ -384,11 +366,10 @@ export default function DisplayView({ test, sessionInfo, onUpdate, setAppState }
               // Extract span class
               const classMatch = result.substring(i).match(/class="([^"]+)"/);
               if (classMatch) {
-                spanClass = classMatch[1];
+                // span class captured if needed in future
               }
 
               insideSpan = true;
-              spanContent = '';
 
               // Find the end of the span opening tag
               const spanTagEnd = result.indexOf('>', i);
@@ -519,7 +500,7 @@ const handleUpdateChoice = (choiceIndex: number) => {
       <div className="tools-container">
         <div style={{display: 'flex'}}>
         <div className="display-home-button">
-          <HomeButton setAppState={setAppState} />
+          <HomeButton onGoHome={onGoHome} />
         </div>
         <div className="search-bar">
           <input
@@ -646,7 +627,7 @@ const handleUpdateChoice = (choiceIndex: number) => {
       {showResults && (
         <div className="results-overlay">
           <div className="display-home-button">
-            <HomeButton setAppState={setAppState} />
+            <HomeButton onGoHome={onGoHome} />
           </div>
           <div className="score-text">{`${score.correct}/${score.total}`}</div>
           <button

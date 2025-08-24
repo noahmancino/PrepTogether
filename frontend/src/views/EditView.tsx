@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import PassageEditor from "../components/PassageEditor";
 import QuestionEditor from "../components/QuestionEditor";
-import type {Question, Test, Section} from "../Types";
+import type { Question, Test, Section } from "../Types";
 import "../styles/App.css";
 import "../styles/EditView.css";
 import HomeButton from "../components/HomeButton.tsx";
@@ -10,11 +10,12 @@ import QuestionNavigation from "../components/QuestionNavigation.tsx";
 type Props = {
   test: Test;
   onUpdateSection: (index: number, updatedSection: Section) => void;
-  setAppState: (state: (prevState: any) => any) => void;
-  onUpdateTestName: (id:string, name:string) => void;
+  onUpdateSections: (sections: Section[]) => void;
+  onUpdateTestName: (id: string, name: string) => void;
+  onGoHome: () => void;
 };
 
-export default function EditView({ test, onUpdateSection, setAppState, onUpdateTestName }: Props) {
+export default function EditView({ test, onUpdateSection, onUpdateSections, onUpdateTestName, onGoHome }: Props) {
   // Current section and question being edited
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -107,13 +108,7 @@ export default function EditView({ test, onUpdateSection, setAppState, onUpdateT
     const newSections = [...safeSections];
     newSections.splice(sectionIndex, 1);
 
-    setAppState(prev =>
-    {
-      const tests = { ...prev.tests };
-      const current = tests[test.id];
-      tests[test.id] = { ...current, sections: newSections };
-      return { ...prev, tests };
-    })
+    onUpdateSections(newSections);
     const newSectionIndex = Math.min(sectionIndex, newSections.length - 1);
     setCurrentSectionIndex(Math.max(newSectionIndex, 0));
     setCurrentQuestionIndex(0);
@@ -188,12 +183,7 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
   };
 
   const reorderSections = (newSections: Section[]) => {
-    setAppState(prev => {
-      const tests = { ...prev.tests };
-      const current = tests[test.id];
-      tests[test.id] = { ...current, sections: newSections };
-      return { ...prev, tests };
-    });
+    onUpdateSections(newSections);
     const movedSection = safeSections[currentSectionIndex];
     const newIdx = newSections.indexOf(movedSection);
     setCurrentSectionIndex(newIdx);
@@ -202,7 +192,7 @@ const addQuestion = (sectionIndex: number, afterQuestionIndex: number) => {
   return (
     <div style={{ display: "block" }}>
       <div className="edit-home-button">
-        <HomeButton setAppState={setAppState} />
+        <HomeButton onGoHome={onGoHome} />
       </div>
       <input
         className="heading-input"

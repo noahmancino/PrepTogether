@@ -1,9 +1,15 @@
-import type {AppState} from "../Types.tsx";
+type Highlight = {
+  id: string;
+  startIndex: number;
+  endIndex: number;
+  type: string;
+};
 
 export type SessionEvent =
   | { type: 'timer'; remaining: number }
-  | { type: 'highlight'; highlight: any }
-  | { type: 'search'; term: string };
+  | { type: 'highlight'; highlight: Highlight }
+  | { type: 'search'; term: string }
+  | { type: 'state_update'; patch: unknown };
 
 export type SessionConnection = {
   send: (event: SessionEvent) => void;

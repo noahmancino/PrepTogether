@@ -2,16 +2,12 @@
 import "../styles/App.css";
 
 type HomeButtonProps = {
-  setAppState: (state: (prevState: any) => any) => void;
+  onGoHome: () => void;
 };
 
-export default function HomeButton({ setAppState }: HomeButtonProps) {
+export default function HomeButton({ onGoHome }: HomeButtonProps) {
   const handleHomeClick = () => {
-    setAppState((prevState) => ({
-      ...prevState,
-      viewMode: "home",
-      activeTestId: null
-    }));
+    onGoHome();
   };
 
   return (

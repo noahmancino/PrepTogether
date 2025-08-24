@@ -27,8 +27,11 @@ export type CollaborativeSession = {
   connectedUsers: string[];
   lastSynced: number;
   sharedTestId: string;
+  userId?: string;
+  startTime?: string;
+  isAuthor?: boolean;
   /** Optional state used when the user is not the host */
-  sessionState?: any;
+  sessionState?: unknown;
 };
 
 export type Test = {
