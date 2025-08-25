@@ -7,7 +7,10 @@ from typing import Dict, List
 import local_config
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from schemas import AppState, Test, Section, Question
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 
 app = FastAPI()
@@ -23,25 +26,25 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # In-memory session management
 # ---------------------------------------------------------------------------
+class appState:
+
 
 
 class Session:
     """Simple in-memory representation of a collaborative session."""
 
-    def __init__(self, host_token: str, state: dict | None = None) -> None:
+    def __init__(self, host_token: str, state: AppState) -> None:
         self.host_token = host_token
         self.participants: set[str] = set()
         self.connections: Dict[str, WebSocket] = {}
         self.highlights: List[dict] = []
         self.search: str = ""
-        self.state: dict = state or {}
-        self.view: str = self.state.get("viewMode", "home")
+        self.state: AppState = state
         self.question_index: dict = {"section": 0, "question": 0}
 
 
 # session_id -> Session
 SESSIONS: Dict[str, Session] = {}
-
 
 # ---------------------------------------------------------------------------
 # HTTP endpoints
@@ -49,7 +52,7 @@ SESSIONS: Dict[str, Session] = {}
 
 
 @app.post("/sessions")
-async def create_session(state: dict = Body(...)) -> dict:
+async def create_session(state: AppState) -> dict:
     """Create a new collaborative session and return identifiers."""
     print("creating session... ", end="", flush=True)
     session_id = uuid.uuid4().hex
@@ -66,7 +69,7 @@ async def join_session(session_id: str) -> dict:
 
     participant_token = uuid.uuid4().hex
     session.participants.add(participant_token)
-    return {"participant_token": participant_token}
+    return {"participant_token": participant_token, "session_id": session_id, "state": session.state}
 
 
 @app.post("/sessions/{session_id}/leave")
@@ -121,7 +124,6 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
             "type": "state",
             "highlights": session.highlights,
             "search": session.search,
-            "state": session.state,
             "view": session.view,
             "question_index": session.question_index,
         }
@@ -150,15 +152,10 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
                     session.question_index = index
                     session.highlights = []
                     session.search = ""
-            elif msg_type == "state_update":
-                # TODO: implement ops (e.g reset test)
-                patch = data.get("patch")
-                if isinstance(patch, dict):
-                    session.state.update(patch)
+            else:
+                message = "invalid or missing message type: " + str(msg_type)
+                data = {"type": "error", "message": message}
 
-            if session.question_index['question'] == 1:
-                data = {'type': 'highlight', 'highlight': {'id': 'highlight-1756067394076', 'startIndex': 0, 'endIndex': 10, 'type': 'yellow'}}
-            print(data)
             await broadcast(session, data)
     except WebSocketDisconnect:
         pass

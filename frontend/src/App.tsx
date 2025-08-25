@@ -13,6 +13,49 @@ export default function App() {
   });
   const [sessionEvent, setSessionEvent] = useState<SessionEvent | null>(null);
   const [questionPos, setQuestionPos] = useState({ section: 0, question: 0 });
+  const previousRole = useRef<"tutor" | "student" | null>(null);
+  const TEST_STORAGE_KEY = "tests";
+
+  // Load tests from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(TEST_STORAGE_KEY);
+      if (stored) {
+        const tests = JSON.parse(stored) as Record<string, Test>;
+        setAppState((prev) => ({ ...prev, tests }));
+      }
+    } catch (err) {
+      console.error("Failed to load tests from localStorage", err);
+    }
+  }, []);
+
+  // Persist tests when working alone or as session host
+  useEffect(() => {
+    if (!appState.sessionInfo || appState.sessionInfo.role === "tutor") {
+      try {
+        localStorage.setItem(TEST_STORAGE_KEY, JSON.stringify(appState.tests));
+      } catch (err) {
+        console.error("Failed to save tests to localStorage", err);
+      }
+    }
+  }, [appState.tests, appState.sessionInfo]);
+
+  // Restore local tests after leaving a session as a participant
+  useEffect(() => {
+    const role = appState.sessionInfo?.role ?? null;
+    if (role === null && previousRole.current === "student") {
+      try {
+        const stored = localStorage.getItem(TEST_STORAGE_KEY);
+        if (stored) {
+          const tests = JSON.parse(stored) as Record<string, Test>;
+          setAppState((prev) => ({ ...prev, tests }));
+        }
+      } catch (err) {
+        console.error("Failed to load tests from localStorage", err);
+      }
+    }
+    previousRole.current = role;
+  }, [appState.sessionInfo]);
 
   const sessionSend = useRef<((event: SessionEvent) => void) | null>(null);
   const registerSessionSend = (sendFn: ((event: SessionEvent) => void) | null) => {
@@ -43,7 +86,11 @@ export default function App() {
         setAppState((prev) => ({ ...(event.state as AppState), sessionInfo: prev.sessionInfo }));
         setQuestionPos(event.question_index);
         setSessionEvent(event);
-      } else {
+      }
+      else if (event.type === 'error') {
+        console.error("Backend error: " + event.message);
+      }
+      else {
         setSessionEvent(event);
       }
     });
@@ -156,6 +203,7 @@ export default function App() {
             lastSynced: Date.now(),
             sharedTestId: '',
           });
+          setAppState({ ...appState, viewMode: data.state.viewMode, tests: data.state.tests, activeTestId: data.state.activeTestId });
         })
         .catch((err) => console.error('Failed to join session', err));
     }
@@ -163,6 +211,7 @@ export default function App() {
 
   useEffect(() => {
     setQuestionPos({ section: 0, question: 0 });
+    sessionSend.current?.({ type: 'question_index', index: {section: 0, question: 0} });
   }, [appState.viewMode]);
 
   const resetTestProgress = (testId: string) => {

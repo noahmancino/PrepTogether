@@ -1,3 +1,5 @@
+import type {AppState} from "../Types.tsx";
+
 type Highlight = {
   id: string;
   startIndex: number;
@@ -11,12 +13,11 @@ export type SessionEvent =
   | { type: 'state_update'; patch: unknown }
   | { type: 'view'; view: string }
   | { type: 'question_index'; index: { section: number; question: number } }
+  | { type: 'error'; message: string }
   | {
       type: 'state';
-      timer: number;
       highlights: Highlight[];
       search: string;
-      state: unknown;
       view: string;
       question_index: { section: number; question: number };
     };
@@ -46,7 +47,7 @@ export function connectSession(
   };
 }
 
-export async function createSession(state: unknown) {
+export async function createSession(state: AppState) {
   const resp = await fetch('http://localhost:8000/sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -61,7 +62,9 @@ export async function joinSession(sessionId: string) {
     method: 'POST',
   });
   if (!resp.ok) throw new Error('Failed to join session');
-  return resp.json() as Promise<{ participant_token: string }>;
+  return resp.json() as Promise<{
+    state: AppState;
+    participant_token: string }>;
 }
 
 export async function endSession(sessionId: string, token: string) {
