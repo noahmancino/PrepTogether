@@ -21,12 +21,13 @@ type Props = {
   onResetTest: (testId: string) => void;
   onGoHome: () => void;
   sessionEvent: SessionEvent | null;
+  clearSessionEvent: () => void;
   questionPos: { section: number; question: number };
   onQuestionPosChange: (pos: { section: number; question: number }) => void;
   sendSessionEvent: (event: SessionEvent) => void;
 };
 
-export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, onGoHome, sessionEvent, questionPos, onQuestionPosChange, sendSessionEvent }: Props) {
+export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, onGoHome, sessionEvent, clearSessionEvent, questionPos, onQuestionPosChange, sendSessionEvent }: Props) {
   // Track current question across all sections
   const [currentSectionIndex, setCurrentSectionIndex] = useState(questionPos.section);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(questionPos.question);
@@ -85,10 +86,11 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
     return () => {
       if (!hasReset.current) {
         onResetTest(test.id);
+        clearSessionEvent();
         hasReset.current = true;
       }
     };
-  }, []);
+  }, [clearSessionEvent, onResetTest, test.id]);
 
 
   // Timer effect - host controls timer and broadcasts updates
@@ -156,7 +158,8 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
       setScore({ correct, total });
       setShowResults(true);
     }
-  }, [sessionEvent, test]);
+    clearSessionEvent();
+  }, [sessionEvent, clearSessionEvent]);
 
   const handlePassageHighlight = () => {
     if (activeHighlighter === "none") return;
@@ -647,7 +650,6 @@ const handleUpdateChoice = (choiceIndex: number) => {
             className="show-answer-button"
             onClick={() => {
               setShowResults(false);
-              onResetTest(test.id);
             }}
           >
             Back to Test

@@ -12,6 +12,7 @@ export default function App() {
     ...multipleTestsEditingState,
   });
   const [sessionEvent, setSessionEvent] = useState<SessionEvent | null>(null);
+  const clearSessionEvent = () => setSessionEvent(null);
   const [questionPos, setQuestionPos] = useState({ section: 0, question: 0 });
   const previousRole = useRef<"tutor" | "student" | null>(null);
   const TEST_STORAGE_KEY = "tests";
@@ -277,6 +278,7 @@ export default function App() {
           onResetTest={resetTestProgress}
           onGoHome={goHome}
           sessionEvent={sessionEvent}
+          clearSessionEvent={clearSessionEvent}
           questionPos={questionPos}
           onQuestionPosChange={(pos) => {
             setQuestionPos(pos);
