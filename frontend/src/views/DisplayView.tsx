@@ -645,7 +645,10 @@ const handleUpdateChoice = (choiceIndex: number) => {
           <div className="score-text">{`${score.correct}/${score.total}`}</div>
           <button
             className="show-answer-button"
-            onClick={() => setShowResults(false)}
+            onClick={() => {
+              setShowResults(false);
+              onResetTest(test.id);
+            }}
           >
             Back to Test
           </button>

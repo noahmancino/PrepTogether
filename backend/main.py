@@ -6,7 +6,7 @@ import asyncio
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-import local_config
+import config
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from schemas import AppState
@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[local_config.client_address],
+    allow_origins=[config.CLIENT_ORIGIN],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -265,4 +265,10 @@ async def root() -> dict:
 @app.get("/hello/{name}")
 async def say_hello(name: str) -> dict:
     return {"message": f"Hello {name}"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host=config.BACKEND_HOST, port=config.BACKEND_PORT)
 
