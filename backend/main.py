@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Optional
 import local_config
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import AppState, Test, Section, Question
+from schemas import AppState
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -26,9 +26,6 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # In-memory session management
 # ---------------------------------------------------------------------------
-class appState:
-
-
 
 class Session:
     """Simple in-memory representation of a collaborative session."""
@@ -39,7 +36,10 @@ class Session:
         self.connections: Dict[str, WebSocket] = {}
         self.highlights: List[dict] = []
         self.search: str = ""
-        self.state: AppState = state
+        # store a plain dict for easy mutation
+        self.state: Dict = state.dict()
+        self.view: str = self.state.get("viewMode", "home")
+        self.active_test_id: Optional[str] = self.state.get("activeTestId")
         self.question_index: dict = {"section": 0, "question": 0}
 
 
@@ -122,6 +122,7 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     await websocket.send_json(
         {
             "type": "state",
+            "state": session.state,
             "highlights": session.highlights,
             "search": session.search,
             "view": session.view,
@@ -132,7 +133,6 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     try:
         while True:
             data = await websocket.receive_json()
-            print(data)
             msg_type = data.get("type")
 
             if msg_type == "highlight":
@@ -143,18 +143,51 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
                 session.search = data.get("term", "")
             elif msg_type == "view":
                 session.view = data.get("view", "home")
+                test_id = data.get("testId")
                 session.state["viewMode"] = session.view
                 session.highlights = []
                 session.search = ""
+                if test_id is not None:
+                    session.state["activeTestId"] = test_id
+                    session.active_test_id = test_id
+                    data["testId"] = test_id
+                else:
+                    session.state["activeTestId"] = None
+                    session.active_test_id = None
             elif msg_type == "question_index":
                 index = data.get("index")
                 if isinstance(index, dict):
                     session.question_index = index
                     session.highlights = []
                     session.search = ""
-            else:
-                message = "invalid or missing message type: " + str(msg_type)
-                data = {"type": "error", "message": message}
+            elif msg_type == "question_update":
+                test_id = data.get("testId")
+                section_idx = data.get("sectionIndex")
+                question_idx = data.get("questionIndex")
+                question = data.get("question")
+                try:
+                    session.state.setdefault("tests", {})
+                    session.state["tests"].setdefault(test_id, {"sections": []})
+                    sections = session.state["tests"][test_id].setdefault("sections", [])
+                    while len(sections) <= section_idx:
+                        sections.append({"passage": "", "questions": []})
+                    questions = sections[section_idx].setdefault("questions", [])
+                    while len(questions) <= question_idx:
+                        questions.append({})
+                    questions[question_idx] = question
+                except Exception:
+                    pass
+            elif msg_type == "reset_test":
+                test_id = data.get("testId")
+                test = session.state.get("tests", {}).get(test_id)
+                if test:
+                    for section in test.get("sections", []):
+                        for q in section.get("questions", []):
+                            q.pop("selectedChoice", None)
+                            q.pop("revealedIncorrectChoice", None)
+                            q.pop("eliminatedChoices", None)
+            elif msg_type == "submit_test":
+                pass
 
             await broadcast(session, data)
     except WebSocketDisconnect:

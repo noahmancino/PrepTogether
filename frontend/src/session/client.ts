@@ -1,4 +1,4 @@
-import type {AppState} from "../Types.tsx";
+import type {AppState, Question} from "../Types.tsx";
 
 type Highlight = {
   id: string;
@@ -10,12 +10,21 @@ type Highlight = {
 export type SessionEvent =
   | { type: 'highlight'; highlight: Highlight }
   | { type: 'search'; term: string }
-  | { type: 'state_update'; patch: unknown }
-  | { type: 'view'; view: string }
+  | { type: 'view'; view: string; testId?: string }
   | { type: 'question_index'; index: { section: number; question: number } }
+  | {
+      type: 'question_update';
+      testId: string;
+      sectionIndex: number;
+      questionIndex: number;
+      question: Question;
+    }
+  | { type: 'reset_test'; testId: string }
+  | { type: 'submit_test'; testId: string }
   | { type: 'error'; message: string }
   | {
       type: 'state';
+      state: AppState;
       highlights: Highlight[];
       search: string;
       view: string;

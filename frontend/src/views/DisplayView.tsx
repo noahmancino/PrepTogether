@@ -142,8 +142,21 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
     } else if (sessionEvent.type === 'state') {
       setPassageHighlights(sessionEvent.highlights);
       setSearchTerm(sessionEvent.search);
+    } else if (sessionEvent.type === 'submit_test' && sessionEvent.testId === test.id) {
+      let correct = 0;
+      let total = 0;
+      test.sections.forEach((section) => {
+        section.questions.forEach((q) => {
+          total += 1;
+          if (q.selectedChoice === q.correctChoice && q.correctChoice !== undefined) {
+            correct += 1;
+          }
+        });
+      });
+      setScore({ correct, total });
+      setShowResults(true);
     }
-  }, [sessionEvent]);
+  }, [sessionEvent, test]);
 
   const handlePassageHighlight = () => {
     if (activeHighlighter === "none") return;
@@ -493,6 +506,7 @@ const handleUpdateChoice = (choiceIndex: number) => {
 
     setScore({ correct, total });
     setShowResults(true);
+    sendSessionEvent({ type: 'submit_test', testId: test.id });
   };
 
   return (
