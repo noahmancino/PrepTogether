@@ -1,9 +1,11 @@
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta
+import asyncio
 from fastapi.testclient import TestClient
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-from main import app
+from main import app, SESSIONS, cleanup_sessions
 
 client = TestClient(app)
 
@@ -101,3 +103,19 @@ def test_websocket_submit_test():
         message = user_ws.receive_json()
         assert message['type'] == 'submit_test'
         assert message['testId'] == 't1'
+
+
+def test_session_expires_after_two_hours():
+    session_id, host_token, participant_token = create_session_and_join()
+    session = SESSIONS[session_id]
+    session.created_at = datetime.utcnow() - timedelta(hours=3)
+    asyncio.get_event_loop().run_until_complete(cleanup_sessions())
+    assert session_id not in SESSIONS
+
+
+def test_session_removed_after_idle():
+    session_id, host_token, participant_token = create_session_and_join()
+    session = SESSIONS[session_id]
+    session.last_active = datetime.utcnow() - timedelta(minutes=6)
+    asyncio.get_event_loop().run_until_complete(cleanup_sessions())
+    assert session_id not in SESSIONS

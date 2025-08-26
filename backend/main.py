@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import local_config
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -41,10 +43,49 @@ class Session:
         self.view: str = self.state.get("viewMode", "home")
         self.active_test_id: Optional[str] = self.state.get("activeTestId")
         self.question_index: dict = {"section": 0, "question": 0}
+        now = datetime.utcnow()
+        self.created_at: datetime = now
+        self.last_active: datetime = now
 
 
 # session_id -> Session
 SESSIONS: Dict[str, Session] = {}
+
+SESSION_MAX_AGE = timedelta(hours=2)
+SESSION_IDLE_TIMEOUT = timedelta(minutes=5)
+
+
+def session_expired(session: Session) -> bool:
+    now = datetime.utcnow()
+    if now - session.created_at > SESSION_MAX_AGE:
+        return True
+    if not session.connections and now - session.last_active > SESSION_IDLE_TIMEOUT:
+        return True
+    return False
+
+
+async def cleanup_sessions() -> None:
+    now = datetime.utcnow()
+    expired = [sid for sid, sess in SESSIONS.items() if session_expired(sess)]
+    for sid in expired:
+        session = SESSIONS.pop(sid, None)
+        if session:
+            for ws in list(session.connections.values()):
+                try:
+                    await ws.close()
+                except Exception:
+                    pass
+
+
+async def _cleanup_loop() -> None:
+    while True:
+        await cleanup_sessions()
+        await asyncio.sleep(60)
+
+
+@app.on_event("startup")
+async def _startup() -> None:
+    asyncio.create_task(_cleanup_loop())
 
 # ---------------------------------------------------------------------------
 # HTTP endpoints
@@ -64,12 +105,18 @@ async def create_session(state: AppState) -> dict:
 async def join_session(session_id: str) -> dict:
     """Join an existing session and receive a participant token."""
     session = SESSIONS.get(session_id)
-    if session is None:
+    if session is None or session_expired(session):
+        SESSIONS.pop(session_id, None)
         raise HTTPException(status_code=404, detail="Session not found")
 
+    session.last_active = datetime.utcnow()
     participant_token = uuid.uuid4().hex
     session.participants.add(participant_token)
-    return {"participant_token": participant_token, "session_id": session_id, "state": session.state}
+    return {
+        "participant_token": participant_token,
+        "session_id": session_id,
+        "state": session.state,
+    }
 
 
 @app.post("/sessions/{session_id}/leave")
@@ -78,10 +125,10 @@ async def leave_session(session_id: str, token: str) -> None:
     session = SESSIONS.get(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    else:
-        session.participants.discard(token)
-        if not session.participants:
-            SESSIONS.pop(session_id)
+    session.participants.discard(token)
+    session.last_active = datetime.utcnow()
+    if not session.participants and not session.connections:
+        SESSIONS.pop(session_id, None)
 
 
 # ---------------------------------------------------------------------------
@@ -91,11 +138,12 @@ async def leave_session(session_id: str, token: str) -> None:
 
 async def broadcast(session: Session, message: dict) -> None:
     """Broadcast a message to all connected clients of a session."""
+    session.last_active = datetime.utcnow()
     disconnected = []
-    for token, connection in session.connections.items():
+    for token, connection in list(session.connections.items()):
         try:
             await connection.send_json(message)
-        except WebSocketDisconnect:
+        except Exception:
             disconnected.append(token)
 
     for token in disconnected:
@@ -106,7 +154,8 @@ async def broadcast(session: Session, message: dict) -> None:
 async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     """Handle websocket connections for a session."""
     session = SESSIONS.get(session_id)
-    if session is None:
+    if session is None or session_expired(session):
+        SESSIONS.pop(session_id, None)
         await websocket.close(code=4004)
         return
 
@@ -117,6 +166,7 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
 
     await websocket.accept()
     session.connections[token] = websocket
+    session.last_active = datetime.utcnow()
 
     # send current state
     await websocket.send_json(
@@ -133,6 +183,7 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     try:
         while True:
             data = await websocket.receive_json()
+            session.last_active = datetime.utcnow()
             msg_type = data.get("type")
 
             if msg_type == "highlight":
@@ -192,9 +243,13 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
             await broadcast(session, data)
     except WebSocketDisconnect:
         pass
+    except Exception:
+        logging.exception("Websocket error in session %s", session_id)
     finally:
         session.connections.pop(token, None)
         session.participants.discard(token)
+        if not session.connections:
+            session.last_active = datetime.utcnow()
 
 
 # ---------------------------------------------------------------------------
