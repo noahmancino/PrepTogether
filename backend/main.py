@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
-from typing import Dict, List
-import local_config
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
+import config
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import AppState, Test, Section, Question
+from schemas import AppState
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -16,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[local_config.client_address],
+    allow_origins=[config.CLIENT_ORIGIN],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,9 +28,6 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # In-memory session management
 # ---------------------------------------------------------------------------
-class appState:
-
-
 
 class Session:
     """Simple in-memory representation of a collaborative session."""
@@ -39,12 +38,54 @@ class Session:
         self.connections: Dict[str, WebSocket] = {}
         self.highlights: List[dict] = []
         self.search: str = ""
-        self.state: AppState = state
+        # store a plain dict for easy mutation
+        self.state: Dict = state.dict()
+        self.view: str = self.state.get("viewMode", "home")
+        self.active_test_id: Optional[str] = self.state.get("activeTestId")
         self.question_index: dict = {"section": 0, "question": 0}
+        now = datetime.utcnow()
+        self.created_at: datetime = now
+        self.last_active: datetime = now
 
 
 # session_id -> Session
 SESSIONS: Dict[str, Session] = {}
+
+SESSION_MAX_AGE = timedelta(hours=2)
+SESSION_IDLE_TIMEOUT = timedelta(minutes=5)
+
+
+def session_expired(session: Session) -> bool:
+    now = datetime.utcnow()
+    if now - session.created_at > SESSION_MAX_AGE:
+        return True
+    if not session.connections and now - session.last_active > SESSION_IDLE_TIMEOUT:
+        return True
+    return False
+
+
+async def cleanup_sessions() -> None:
+    now = datetime.utcnow()
+    expired = [sid for sid, sess in SESSIONS.items() if session_expired(sess)]
+    for sid in expired:
+        session = SESSIONS.pop(sid, None)
+        if session:
+            for ws in list(session.connections.values()):
+                try:
+                    await ws.close()
+                except Exception:
+                    pass
+
+
+async def _cleanup_loop() -> None:
+    while True:
+        await cleanup_sessions()
+        await asyncio.sleep(60)
+
+
+@app.on_event("startup")
+async def _startup() -> None:
+    asyncio.create_task(_cleanup_loop())
 
 # ---------------------------------------------------------------------------
 # HTTP endpoints
@@ -64,12 +105,18 @@ async def create_session(state: AppState) -> dict:
 async def join_session(session_id: str) -> dict:
     """Join an existing session and receive a participant token."""
     session = SESSIONS.get(session_id)
-    if session is None:
+    if session is None or session_expired(session):
+        SESSIONS.pop(session_id, None)
         raise HTTPException(status_code=404, detail="Session not found")
 
+    session.last_active = datetime.utcnow()
     participant_token = uuid.uuid4().hex
     session.participants.add(participant_token)
-    return {"participant_token": participant_token, "session_id": session_id, "state": session.state}
+    return {
+        "participant_token": participant_token,
+        "session_id": session_id,
+        "state": session.state,
+    }
 
 
 @app.post("/sessions/{session_id}/leave")
@@ -78,10 +125,10 @@ async def leave_session(session_id: str, token: str) -> None:
     session = SESSIONS.get(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    else:
-        session.participants.discard(token)
-        if not session.participants:
-            SESSIONS.pop(session_id)
+    session.participants.discard(token)
+    session.last_active = datetime.utcnow()
+    if not session.participants and not session.connections:
+        SESSIONS.pop(session_id, None)
 
 
 # ---------------------------------------------------------------------------
@@ -91,11 +138,12 @@ async def leave_session(session_id: str, token: str) -> None:
 
 async def broadcast(session: Session, message: dict) -> None:
     """Broadcast a message to all connected clients of a session."""
+    session.last_active = datetime.utcnow()
     disconnected = []
-    for token, connection in session.connections.items():
+    for token, connection in list(session.connections.items()):
         try:
             await connection.send_json(message)
-        except WebSocketDisconnect:
+        except Exception:
             disconnected.append(token)
 
     for token in disconnected:
@@ -106,7 +154,8 @@ async def broadcast(session: Session, message: dict) -> None:
 async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     """Handle websocket connections for a session."""
     session = SESSIONS.get(session_id)
-    if session is None:
+    if session is None or session_expired(session):
+        SESSIONS.pop(session_id, None)
         await websocket.close(code=4004)
         return
 
@@ -117,11 +166,13 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
 
     await websocket.accept()
     session.connections[token] = websocket
+    session.last_active = datetime.utcnow()
 
     # send current state
     await websocket.send_json(
         {
             "type": "state",
+            "state": session.state,
             "highlights": session.highlights,
             "search": session.search,
             "view": session.view,
@@ -132,7 +183,7 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
     try:
         while True:
             data = await websocket.receive_json()
-            print(data)
+            session.last_active = datetime.utcnow()
             msg_type = data.get("type")
 
             if msg_type == "highlight":
@@ -143,25 +194,62 @@ async def session_ws(websocket: WebSocket, session_id: str, token: str) -> None:
                 session.search = data.get("term", "")
             elif msg_type == "view":
                 session.view = data.get("view", "home")
+                test_id = data.get("testId")
                 session.state["viewMode"] = session.view
                 session.highlights = []
                 session.search = ""
+                if test_id is not None:
+                    session.state["activeTestId"] = test_id
+                    session.active_test_id = test_id
+                    data["testId"] = test_id
+                else:
+                    session.state["activeTestId"] = None
+                    session.active_test_id = None
             elif msg_type == "question_index":
                 index = data.get("index")
                 if isinstance(index, dict):
                     session.question_index = index
                     session.highlights = []
                     session.search = ""
-            else:
-                message = "invalid or missing message type: " + str(msg_type)
-                data = {"type": "error", "message": message}
+            elif msg_type == "question_update":
+                test_id = data.get("testId")
+                section_idx = data.get("sectionIndex")
+                question_idx = data.get("questionIndex")
+                question = data.get("question")
+                try:
+                    session.state.setdefault("tests", {})
+                    session.state["tests"].setdefault(test_id, {"sections": []})
+                    sections = session.state["tests"][test_id].setdefault("sections", [])
+                    while len(sections) <= section_idx:
+                        sections.append({"passage": "", "questions": []})
+                    questions = sections[section_idx].setdefault("questions", [])
+                    while len(questions) <= question_idx:
+                        questions.append({})
+                    questions[question_idx] = question
+                except Exception:
+                    pass
+            elif msg_type == "reset_test":
+                test_id = data.get("testId")
+                test = session.state.get("tests", {}).get(test_id)
+                if test:
+                    for section in test.get("sections", []):
+                        for q in section.get("questions", []):
+                            q.pop("selectedChoice", None)
+                            q.pop("revealedIncorrectChoice", None)
+                            q.pop("eliminatedChoices", None)
+            elif msg_type == "submit_test":
+                pass
 
             await broadcast(session, data)
     except WebSocketDisconnect:
         pass
+    except Exception:
+        logging.exception("Websocket error in session %s", session_id)
     finally:
         session.connections.pop(token, None)
         session.participants.discard(token)
+        if not session.connections:
+            session.last_active = datetime.utcnow()
 
 
 # ---------------------------------------------------------------------------
@@ -177,4 +265,10 @@ async def root() -> dict:
 @app.get("/hello/{name}")
 async def say_hello(name: str) -> dict:
     return {"message": f"Hello {name}"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host=config.BACKEND_HOST, port=config.BACKEND_PORT)
 

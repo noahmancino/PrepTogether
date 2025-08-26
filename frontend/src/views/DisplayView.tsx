@@ -21,12 +21,13 @@ type Props = {
   onResetTest: (testId: string) => void;
   onGoHome: () => void;
   sessionEvent: SessionEvent | null;
+  clearSessionEvent: () => void;
   questionPos: { section: number; question: number };
   onQuestionPosChange: (pos: { section: number; question: number }) => void;
   sendSessionEvent: (event: SessionEvent) => void;
 };
 
-export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, onGoHome, sessionEvent, questionPos, onQuestionPosChange, sendSessionEvent }: Props) {
+export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, onGoHome, sessionEvent, clearSessionEvent, questionPos, onQuestionPosChange, sendSessionEvent }: Props) {
   // Track current question across all sections
   const [currentSectionIndex, setCurrentSectionIndex] = useState(questionPos.section);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(questionPos.question);
@@ -85,10 +86,11 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
     return () => {
       if (!hasReset.current) {
         onResetTest(test.id);
+        clearSessionEvent();
         hasReset.current = true;
       }
     };
-  }, []);
+  }, [clearSessionEvent, onResetTest, test.id]);
 
 
   // Timer effect - host controls timer and broadcasts updates
@@ -142,8 +144,22 @@ export default function DisplayView({ test, sessionInfo, onUpdate, onResetTest, 
     } else if (sessionEvent.type === 'state') {
       setPassageHighlights(sessionEvent.highlights);
       setSearchTerm(sessionEvent.search);
+    } else if (sessionEvent.type === 'submit_test' && sessionEvent.testId === test.id) {
+      let correct = 0;
+      let total = 0;
+      test.sections.forEach((section) => {
+        section.questions.forEach((q) => {
+          total += 1;
+          if (q.selectedChoice === q.correctChoice && q.correctChoice !== undefined) {
+            correct += 1;
+          }
+        });
+      });
+      setScore({ correct, total });
+      setShowResults(true);
     }
-  }, [sessionEvent]);
+    clearSessionEvent();
+  }, [sessionEvent, clearSessionEvent]);
 
   const handlePassageHighlight = () => {
     if (activeHighlighter === "none") return;
@@ -493,6 +509,7 @@ const handleUpdateChoice = (choiceIndex: number) => {
 
     setScore({ correct, total });
     setShowResults(true);
+    sendSessionEvent({ type: 'submit_test', testId: test.id });
   };
 
   return (
@@ -631,7 +648,9 @@ const handleUpdateChoice = (choiceIndex: number) => {
           <div className="score-text">{`${score.correct}/${score.total}`}</div>
           <button
             className="show-answer-button"
-            onClick={() => setShowResults(false)}
+            onClick={() => {
+              setShowResults(false);
+            }}
           >
             Back to Test
           </button>

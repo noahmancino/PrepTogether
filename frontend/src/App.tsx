@@ -12,6 +12,7 @@ export default function App() {
     ...multipleTestsEditingState,
   });
   const [sessionEvent, setSessionEvent] = useState<SessionEvent | null>(null);
+  const clearSessionEvent = () => setSessionEvent(null);
   const [questionPos, setQuestionPos] = useState({ section: 0, question: 0 });
   const previousRole = useRef<"tutor" | "student" | null>(null);
   const TEST_STORAGE_KEY = "tests";
@@ -61,11 +62,6 @@ export default function App() {
   const registerSessionSend = (sendFn: ((event: SessionEvent) => void) | null) => {
     sessionSend.current = sendFn;
   };
-  const sendStateUpdate = (patch: unknown) => {
-    if (appState.sessionInfo && sessionSend.current) {
-      sessionSend.current({ type: 'state_update', patch });
-    }
-  };
 
   const activeTest = appState.activeTestId
     ? appState.tests[appState.activeTestId]
@@ -79,18 +75,45 @@ export default function App() {
     }
     const conn = connectSession(info.sessionId, info.token, (event) => {
       if (event.type === 'view') {
-        setAppState((prev) => ({ ...prev, viewMode: event.view }));
+        setAppState((prev) => ({ ...prev, viewMode: event.view, activeTestId: event.testId ?? null }));
       } else if (event.type === 'question_index') {
         setQuestionPos(event.index);
       } else if (event.type === 'state') {
         setAppState((prev) => ({ ...(event.state as AppState), sessionInfo: prev.sessionInfo }));
         setQuestionPos(event.question_index);
         setSessionEvent(event);
-      }
-      else if (event.type === 'error') {
+      } else if (event.type === 'question_update') {
+        setAppState((prev) => {
+          const test = prev.tests[event.testId];
+          if (!test) return prev;
+          const updatedSections = [...test.sections];
+          updatedSections[event.sectionIndex].questions[event.questionIndex] = event.question;
+          return {
+            ...prev,
+            tests: { ...prev.tests, [event.testId]: { ...test, sections: updatedSections } },
+          };
+        });
+      } else if (event.type === 'reset_test') {
+        setAppState((prev) => {
+          const target = prev.tests[event.testId];
+          if (!target) return prev;
+          const resetSections = target.sections.map((section) => ({
+            ...section,
+            questions: section.questions.map((q) => ({
+              ...q,
+              selectedChoice: undefined,
+              revealedIncorrectChoice: undefined,
+              eliminatedChoices: undefined,
+            })),
+          }));
+          return {
+            ...prev,
+            tests: { ...prev.tests, [event.testId]: { ...target, sections: resetSections } },
+          };
+        });
+      } else if (event.type === 'error') {
         console.error("Backend error: " + event.message);
-      }
-      else {
+      } else {
         setSessionEvent(event);
       }
     });
@@ -101,9 +124,9 @@ export default function App() {
     };
   }, [appState.sessionInfo]);
 
-  const sendViewChange = (view: string) => {
+  const sendViewChange = (view: string, testId?: string | null) => {
     if (appState.sessionInfo && sessionSend.current) {
-      sessionSend.current({ type: 'view', view });
+      sessionSend.current({ type: 'view', view, testId: testId ?? undefined });
     }
   };
 
@@ -113,13 +136,18 @@ export default function App() {
     updatedSections[sectionIndex].questions[questionIndex] = updatedQuestion;
     const updatedTests = { ...appState.tests, [activeTest.id]: { ...activeTest, sections: updatedSections } };
     setAppState({ ...appState, tests: updatedTests });
-    sendStateUpdate({ op: 'updateQuestion', testId: activeTest.id, sectionIndex, questionIndex, question: updatedQuestion });
+    sessionSend.current?.({
+      type: 'question_update',
+      testId: activeTest.id,
+      sectionIndex,
+      questionIndex,
+      question: updatedQuestion,
+    });
   };
 
   const updateTestName = (testId: string, updatedName: string) => {
     const updatedTests = { ...appState.tests, [testId]: { ...appState.tests[testId], name: updatedName } };
     setAppState({ ...appState, tests: updatedTests });
-    sendStateUpdate({ op: 'updateTestName', testId, name: updatedName });
   };
 
   const updateSection = (index: number, updatedSection: Section) => {
@@ -128,14 +156,12 @@ export default function App() {
     updatedSections[index] = updatedSection;
     const updatedTests = { ...appState.tests, [activeTest.id]: { ...activeTest, sections: updatedSections } };
     setAppState({ ...appState, tests: updatedTests });
-    sendStateUpdate({ op: 'updateSection', testId: activeTest.id, index, section: updatedSection });
   };
 
   const updateSections = (sections: Section[]) => {
     if (!activeTest) return;
     const updatedTests = { ...appState.tests, [activeTest.id]: { ...activeTest, sections } };
     setAppState({ ...appState, tests: updatedTests });
-    sendStateUpdate({ op: 'updateSections', testId: activeTest.id, sections });
   };
 
   const createTest = (name: string, type: "RC" | "LR") => {
@@ -153,40 +179,32 @@ export default function App() {
       viewMode: "edit",
     };
     setAppState(newState);
-    sendStateUpdate({ op: 'createTest', test: newTest, activeTestId: newTestId });
-    sendViewChange('edit');
+    sendViewChange('edit', newTestId);
   };
 
   const viewTest = (testId: string) => {
     setAppState({ ...appState, activeTestId: testId, viewMode: "display" });
-    sendStateUpdate({ op: 'viewTest', testId });
-    sendViewChange('display');
+    sendViewChange('display', testId);
   };
 
   const editTest = (testId: string) => {
     setAppState({ ...appState, activeTestId: testId, viewMode: "edit" });
-    sendStateUpdate({ op: 'editTest', testId });
-    sendViewChange('edit');
+    sendViewChange('edit', testId);
   };
 
   const deleteTest = (testId: string) => {
     const newTests = { ...appState.tests };
     delete newTests[testId];
     setAppState({ ...appState, tests: newTests });
-    sendStateUpdate({ op: 'deleteTest', testId });
   };
 
   const importTests = (tests: Record<string, Test>) => {
     setAppState({ ...appState, tests: { ...appState.tests, ...tests } });
-    sendStateUpdate({ op: 'importTests', tests });
   };
 
   const setSessionInfo = (info: CollaborativeSession | null) => {
     setAppState({ ...appState, sessionInfo: info });
     console.log(appState.sessionInfo)
-    if (info != null) {
-      sendStateUpdate({ op: 'setSessionInfo', info });
-    }
   };
 
   useEffect(() => {
@@ -228,12 +246,11 @@ export default function App() {
     }));
     const updatedTests = { ...appState.tests, [testId]: { ...target, sections: resetSections } };
     setAppState({ ...appState, tests: updatedTests });
-    sendStateUpdate({ op: 'resetTestProgress', testId });
+    sessionSend.current?.({ type: 'reset_test', testId });
   };
 
   const goHome = () => {
     setAppState({ ...appState, viewMode: "home", activeTestId: null });
-    sendStateUpdate({ op: 'goHome' });
     sendViewChange('home');
   };
 
@@ -261,6 +278,7 @@ export default function App() {
           onResetTest={resetTestProgress}
           onGoHome={goHome}
           sessionEvent={sessionEvent}
+          clearSessionEvent={clearSessionEvent}
           questionPos={questionPos}
           onQuestionPosChange={(pos) => {
             setQuestionPos(pos);
