@@ -6,6 +6,9 @@ import asyncio
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+
+from pydantic import BaseModel
+
 import config
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,7 +55,7 @@ class Session:
 SESSIONS: Dict[str, Session] = {}
 
 SESSION_MAX_AGE = timedelta(hours=2)
-SESSION_IDLE_TIMEOUT = timedelta(minutes=5)
+SESSION_IDLE_TIMEOUT = timedelta(minutes=15)
 
 
 def session_expired(session: Session) -> bool:
@@ -118,17 +121,21 @@ async def join_session(session_id: str) -> dict:
         "state": session.state,
     }
 
+class EndSessionRequest(BaseModel):
+    session_id: str
+    token: str
 
-@app.post("/sessions/{session_id}/leave")
-async def leave_session(session_id: str, token: str) -> None:
+@app.post("/sessions/leave")
+async def leave_session(req_body: EndSessionRequest) -> None:
     """Leave a session."""
-    session = SESSIONS.get(session_id)
+    session = SESSIONS.get(req_body.session_id)
+
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    session.participants.discard(token)
+    session.participants.discard(req_body.token)
     session.last_active = datetime.utcnow()
     if not session.participants and not session.connections:
-        SESSIONS.pop(session_id, None)
+        SESSIONS.pop(req_body.session_id, None)
 
 
 # ---------------------------------------------------------------------------
@@ -140,6 +147,7 @@ async def broadcast(session: Session, message: dict) -> None:
     """Broadcast a message to all connected clients of a session."""
     session.last_active = datetime.utcnow()
     disconnected = []
+    print('here3')
     for token, connection in list(session.connections.items()):
         try:
             await connection.send_json(message)
