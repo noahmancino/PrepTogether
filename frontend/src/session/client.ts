@@ -1,4 +1,5 @@
-import type {AppState} from "../Types.tsx";
+import type {AppState, Question} from "../Types.tsx";
+import { BACKEND_HOST, BACKEND_PORT } from "../config";
 
 type Highlight = {
   id: string;
@@ -10,12 +11,21 @@ type Highlight = {
 export type SessionEvent =
   | { type: 'highlight'; highlight: Highlight }
   | { type: 'search'; term: string }
-  | { type: 'state_update'; patch: unknown }
-  | { type: 'view'; view: string }
+  | { type: 'view'; view: AppState['viewMode']; testId?: string }
   | { type: 'question_index'; index: { section: number; question: number } }
+  | {
+      type: 'question_update';
+      testId: string;
+      sectionIndex: number;
+      questionIndex: number;
+      question: Question;
+    }
+  | { type: 'reset_test'; testId: string }
+  | { type: 'submit_test'; testId: string }
   | { type: 'error'; message: string }
   | {
       type: 'state';
+      state: AppState;
       highlights: Highlight[];
       search: string;
       view: string;
@@ -32,7 +42,7 @@ export function connectSession(
   token: string,
   onEvent: (event: SessionEvent) => void
 ): SessionConnection {
-  const ws = new WebSocket(`ws://localhost:8000/ws/${sessionId}?token=${token}`);
+  const ws = new WebSocket(`ws://${BACKEND_HOST}:${BACKEND_PORT}/ws/${sessionId}?token=${token}`);
   ws.onmessage = (evt) => {
     try {
       const data = JSON.parse(evt.data);
@@ -48,7 +58,7 @@ export function connectSession(
 }
 
 export async function createSession(state: AppState) {
-  const resp = await fetch('http://localhost:8000/sessions', {
+  const resp = await fetch(`http://${BACKEND_HOST}:${BACKEND_PORT}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(state),
@@ -58,7 +68,7 @@ export async function createSession(state: AppState) {
 }
 
 export async function joinSession(sessionId: string) {
-  const resp = await fetch(`http://localhost:8000/sessions/${sessionId}/join`, {
+  const resp = await fetch(`http://${BACKEND_HOST}:${BACKEND_PORT}/sessions/${sessionId}/join`, {
     method: 'POST',
   });
   if (!resp.ok) throw new Error('Failed to join session');
@@ -68,7 +78,7 @@ export async function joinSession(sessionId: string) {
 }
 
 export async function endSession(sessionId: string, token: string) {
-  const resp = await fetch(`http://localhost:8000/sessions/${sessionId}/leave`, {
+  const resp = await fetch(`http://${BACKEND_HOST}:${BACKEND_PORT}/sessions/${sessionId}/leave`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
