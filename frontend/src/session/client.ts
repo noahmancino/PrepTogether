@@ -11,7 +11,7 @@ type Highlight = {
 export type SessionEvent =
   | { type: 'highlight'; highlight: Highlight }
   | { type: 'search'; term: string }
-  | { type: 'view'; view: string; testId?: string }
+  | { type: 'view'; view: AppState['viewMode']; testId?: string }
   | { type: 'question_index'; index: { section: number; question: number } }
   | {
       type: 'question_update';
@@ -78,10 +78,10 @@ export async function joinSession(sessionId: string) {
 }
 
 export async function endSession(sessionId: string, token: string) {
-  const resp = await fetch(`http://${BACKEND_HOST}:${BACKEND_PORT}/sessions/${sessionId}/leave`, {
+  const resp = await fetch(`http://${BACKEND_HOST}:${BACKEND_PORT}/sessions/leave`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ session_id: sessionId, token: token }),
   });
   if (!resp.ok) throw new Error('Failed to end session');
 }

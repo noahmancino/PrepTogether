@@ -12,8 +12,10 @@ consistency in approach would probably be better.
 - Way to clear tests of selected answers without submitting test
 - Are you sure? pop up For delete functionality. 
 - In display view, make long answer choices collapsable. 
+- "Failed to start session" if session fails to connect
 
 
 # Bugs
 - Highlighting. Selecting the correct can be frustrating, and the eraser tool can behave strangely
 - Buttons off-center after starting a session
+- Frontend needs mechanism to detect whether connection is down

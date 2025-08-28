@@ -124,7 +124,7 @@ export default function App() {
     };
   }, [appState.sessionInfo]);
 
-  const sendViewChange = (view: string, testId?: string | null) => {
+  const sendViewChange = (view: AppState['viewMode'], testId?: string | null) => {
     if (appState.sessionInfo && sessionSend.current) {
       sessionSend.current({ type: 'view', view, testId: testId ?? undefined });
     }
