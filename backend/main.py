@@ -19,9 +19,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[config.CLIENT_ORIGIN],
+    allow_origins=["*"],  # Accept any origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

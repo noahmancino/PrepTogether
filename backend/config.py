@@ -8,6 +8,4 @@ import os
 
 
 BACKEND_HOST = os.getenv("BACKEND_HOST", "0.0.0.0")
-BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
-CLIENT_ORIGIN = os.getenv("CLIENT_ORIGIN", "http://localhost:5173")
-
+BACKEND_PORT = int(os.getenv("BACKEND_PORT", "80"))

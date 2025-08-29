@@ -74,6 +74,7 @@ export default function App() {
       return;
     }
     const conn = connectSession(info.sessionId, info.token, (event) => {
+      console.log("Received session event", event);
       if (event.type === 'view') {
         setAppState((prev) => ({ ...prev, viewMode: event.view, activeTestId: event.testId ?? null }));
       } else if (event.type === 'question_index') {

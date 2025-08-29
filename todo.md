@@ -7,6 +7,7 @@
 - onUpdate functions could probably be cleaned up a bit. At times updating whole app state when could make smaller
 update, at times components have functions with nearly identical names/purposes but different type signatures. More
 consistency in approach would probably be better.
+- App state in backend shouldn't be stored as raw dict
 
 # Features
 - Way to clear tests of selected answers without submitting test
